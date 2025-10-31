@@ -21,8 +21,7 @@ const Sidebar = React.memo(() => {
     <div className="fixed left-0 top-0 h-screen w-64 bg-deep-navy text-white flex flex-col">
       {/* Logo/Brand Section */}
       <div className="h-[84px] flex items-center px-6 border-b border-medium-purple">
-        <h1 className="text-2xl font-bold text-white">CZero</h1>
-        <h2 className="text-lg text-light-purple ml-1">paperlytics</h2>
+        <h1 className="text-2xl font-bold text-white">Paperlytics</h1>
       </div>
 
       {/* Navigation Section */}

@@ -1,17 +1,31 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { verifyCredentials } from "../config/auth";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
+    // Verify credentials
+    const isValid = await verifyCredentials(username, password);
+
+    if (!isValid) {
+      // Invalid credentials
+      setIsLoading(false);
+      setError("Invalid username or password");
+      return;
+    }
+
+    // Valid credentials - proceed with login
     // Start fade-out animation after a brief moment
     setTimeout(() => {
       setIsFadingOut(true);
@@ -49,7 +63,7 @@ const Login = () => {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">CZero Monitor</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Paperlytics</h1>
           <p className="text-light-purple">Paper Process Monitoring System</p>
         </div>
 
@@ -63,6 +77,15 @@ const Login = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-warning-red/20 border border-warning-red rounded-lg p-3 animate-slideDown">
+                <p className="text-warning-red text-sm font-medium text-center">
+                  {error}
+                </p>
+              </div>
+            )}
+
             {/* Username Field */}
             <div>
               <label
@@ -75,8 +98,13 @@ const Login = () => {
                 type="text"
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-deep-navy/50 border border-medium-purple/50 rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300"
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  setError("");
+                }}
+                className={`w-full px-4 py-3 bg-deep-navy/50 border rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
+                  error ? "border-warning-red" : "border-medium-purple/50"
+                }`}
                 placeholder="Enter your username"
                 required
                 disabled={isLoading}
@@ -95,8 +123,13 @@ const Login = () => {
                 type="password"
                 id="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-deep-navy/50 border border-medium-purple/50 rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError("");
+                }}
+                className={`w-full px-4 py-3 bg-deep-navy/50 border rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
+                  error ? "border-warning-red" : "border-medium-purple/50"
+                }`}
                 placeholder="Enter your password"
                 required
                 disabled={isLoading}
