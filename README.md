@@ -421,12 +421,10 @@ Extended authentication system to support multiple users with secure password ha
 VALID_USERS = [
   {
     username: 'admin',
-    passwordHash: '04c14a83a60cea1f674674d74f81dde784ff08b7cc9201f451426d649a943bee',
     role: 'admin'
   },
   {
     username: 'KRajan',
-    passwordHash: 'b36f4b97a32746f49849f614e46c3f2ff8652fe09b0d861d6dc6d1bf2c9c6694',
     role: 'user'
   }
 ]
