@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { WishlistProvider } from './context/WishlistContext';
+import { SCTProvider } from './context/SCTContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
@@ -33,38 +34,40 @@ function App() {
   return (
     <Router>
       <WishlistProvider>
-        <Routes>
-          {/* Login Route */}
-          <Route path="/login" element={<Login />} />
+        <SCTProvider>
+          <Routes>
+            {/* Login Route */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <Dashboard />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics/:variableId"
-            element={
-              <ProtectedRoute>
-                <AuthenticatedLayout>
-                  <Analytics />
-                </AuthenticatedLayout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AuthenticatedLayout>
+                    <Dashboard />
+                  </AuthenticatedLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics/:variableId"
+              element={
+                <ProtectedRoute>
+                  <AuthenticatedLayout>
+                    <Analytics />
+                  </AuthenticatedLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Catch all - redirect to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+            {/* Catch all - redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </SCTProvider>
       </WishlistProvider>
     </Router>
   );

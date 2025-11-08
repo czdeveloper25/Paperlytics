@@ -4,6 +4,8 @@ import { processVariables, generateHistoricalData } from '../data/processVariabl
 import { useWishlist } from '../context/WishlistContext';
 import { calculateStatus, getWarningReason } from '../utils/statusCalculator';
 import Toast from './Toast';
+import { useSCTCurrentValue, useSCTService } from '../context/SCTContext';
+import { getActionInstructions } from '../utils/actionInstructions';
 import {
   LineChart,
   Line,
@@ -49,6 +51,17 @@ const Analytics = () => {
   const variable = useMemo(() => {
     return processVariables.find((v) => v.id === parseInt(variableId));
   }, [variableId]);
+
+  // Split context consumption for optimal performance
+  // Only get currentValue if this is the SCT variable
+  const sctValue = variable?.useLiveData && variable?.dataSource === 'sct'
+    ? useSCTCurrentValue()
+    : null;
+
+  // Get service methods (stable, won't cause re-renders)
+  const sctService = variable?.useLiveData && variable?.dataSource === 'sct'
+    ? useSCTService()
+    : null;
 
   // Modal and form state
   const [showModal, setShowModal] = React.useState(false);
@@ -107,43 +120,77 @@ const Analytics = () => {
 
   // Generate chart data based on selected time range and data source
   const chartData = useMemo(() => {
-    return generateHistoricalData(variable, timeRange, dataSource);
-  }, [variable, timeRange, dataSource, refreshKey]);
+    // Use CSV data for SCT variable
+    if (variable.useLiveData && variable.dataSource === 'sct' && sctService) {
+      const allData = sctService.getAllData(); // Stable service method
 
-  // Calculate dynamic status based on the LAST data point in chart (most recent)
-  // This makes status dataset-aware (changes with Normal/Abnormal selection)
+      // Filter based on time range
+      switch (timeRange) {
+        case 'Hour':
+          return allData.slice(-60); // Last 60 minutes
+        case 'Day':
+          return allData; // All 1440 points (24 hours)
+        case 'Week':
+          // Sample every 10 minutes for week view (144 points)
+          return allData.filter((_, i) => i % 10 === 0);
+        case 'Month':
+          // Sample every 30 minutes for month view (48 points)
+          return allData.filter((_, i) => i % 30 === 0);
+        default:
+          return allData;
+      }
+    }
+
+    // Use generated data for other variables
+    return generateHistoricalData(variable, timeRange, dataSource);
+  }, [variable, timeRange, dataSource, refreshKey, sctService]); // sctService is stable
+
+  // Calculate dynamic status
+  // For SCT variable, use live data status; for others, use last chart data point
   const currentStatus = useMemo(() => {
+    if (variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+      return sctValue.status;
+    }
     if (!chartData || chartData.length === 0) {
       return 'normal';
     }
     // Get the last (most recent) data point
     const lastDataPoint = chartData[chartData.length - 1];
     return lastDataPoint.status;
-  }, [chartData]);
+  }, [variable, sctValue, chartData]);
 
   const warningReason = useMemo(() => {
-    if (!chartData || chartData.length === 0) {
+    let currentValue;
+
+    if (variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+      currentValue = parseFloat(sctValue.value);
+    } else if (chartData && chartData.length > 0) {
+      const lastDataPoint = chartData[chartData.length - 1];
+      currentValue = lastDataPoint.value;
+    } else {
       return 'Normal';
     }
-    const lastDataPoint = chartData[chartData.length - 1];
-    const lastValue = lastDataPoint.value;
 
-    if (lastValue > variable.upperThreshold) {
+    if (currentValue > variable.upperThreshold) {
       return 'High Warning';
-    } else if (lastValue < variable.lowerThreshold) {
+    } else if (currentValue < variable.lowerThreshold) {
       return 'Low Warning';
     }
     return 'Normal';
-  }, [chartData, variable.upperThreshold, variable.lowerThreshold]);
+  }, [variable, sctValue, chartData]);
 
-  // Get the current display value from last chart data point
+  // Get the current display value
+  // For SCT variable, use live data; for others, use last chart data point
   const currentDisplayValue = useMemo(() => {
+    if (variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+      return `${sctValue.value} ${variable.unit}`;
+    }
     if (!chartData || chartData.length === 0) {
       return variable.lastValue;
     }
     const lastDataPoint = chartData[chartData.length - 1];
     return `${lastDataPoint.value} ${variable.unit}`;
-  }, [chartData, variable.lastValue, variable.unit]);
+  }, [variable, sctValue, chartData]);
 
   // Calculate statistics based on chart data
   const statistics = useMemo(() => {
@@ -270,6 +317,7 @@ const Analytics = () => {
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-white">{variable.name}</h1>
           <div className="flex gap-3">
+            {/* WISHLIST BUTTON - COMMENTED OUT FOR NOW
             <button
               onClick={handleWishlistToggle}
               className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
@@ -277,6 +325,7 @@ const Analytics = () => {
               <span>{inWishlist ? '⭐' : '☆'}</span>
               <span>{inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
             </button>
+            */}
             <button
               onClick={handleOpenModal}
               className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
@@ -346,6 +395,46 @@ const Analytics = () => {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Action Items Card */}
+      <div className="bg-card-bg p-6 rounded-lg mb-6">
+        <h3 className="text-lg font-bold mb-4">🎯 Action Items</h3>
+
+        {currentStatus === 'warning' ? (
+          // Show specific fixing directions for warnings
+          <div className="bg-deep-navy p-4 rounded-lg border-l-4 border-warning-red">
+            <div className="flex items-start gap-3">
+              <span className="text-warning-red text-2xl flex-shrink-0">⚠️</span>
+              <div className="flex-1">
+                <h4 className="text-white font-bold mb-3">
+                  {warningReason} Detected - Corrective Actions Required
+                </h4>
+                <div className="text-gray-300">
+                  {getActionInstructions(variable, warningReason)}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-gray-400 text-sm">
+                    <span className="font-semibold text-warning-red">Note:</span> Monitor the variable for 5-10 minutes after taking corrective action. Contact process engineer if issue persists.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Normal status - no action needed
+          <div className="bg-deep-navy p-4 rounded-lg border-l-4 border-success-green">
+            <div className="flex items-center gap-3">
+              <span className="text-success-green text-2xl flex-shrink-0">✓</span>
+              <div>
+                <h4 className="text-white font-bold mb-1">Normal Operation</h4>
+                <p className="text-gray-300 text-sm">
+                  No action required. Variable is operating within acceptable range ({variable.lowerThreshold} - {variable.upperThreshold} {variable.unit}).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Time Range Selector */}
@@ -480,48 +569,60 @@ const Analytics = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* Data Source Toggle */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-bold mb-4">Data Source:</h3>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div className="relative">
-              <input
-                type="radio"
-                name="dataSource"
-                value="normal"
-                checked={dataSource === 'normal'}
-                onChange={(e) => setDataSource(e.target.value)}
-                className="sr-only peer"
-              />
-              <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
-                {dataSource === 'normal' && (
-                  <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
-                )}
+      {/* Data Source Toggle - Hidden for SCT (real-time data) */}
+      {!(variable.useLiveData && variable.dataSource === 'sct') && (
+        <div className="bg-card-bg p-6 rounded-lg mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">Data Source:</h3>
+            <button
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              className="flex items-center gap-2 bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all"
+              title="Reload data"
+            >
+              <span className="text-lg">🔄</span>
+              <span>Reload</span>
+            </button>
+          </div>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input
+                  type="radio"
+                  name="dataSource"
+                  value="normal"
+                  checked={dataSource === 'normal'}
+                  onChange={(e) => setDataSource(e.target.value)}
+                  className="sr-only peer"
+                />
+                <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
+                  {dataSource === 'normal' && (
+                    <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
+                  )}
+                </div>
               </div>
-            </div>
-            <span className="text-white font-medium">Normal Dataset</span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div className="relative">
-              <input
-                type="radio"
-                name="dataSource"
-                value="abnormal"
-                checked={dataSource === 'abnormal'}
-                onChange={(e) => setDataSource(e.target.value)}
-                className="sr-only peer"
-              />
-              <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
-                {dataSource === 'abnormal' && (
-                  <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
-                )}
+              <span className="text-white font-medium">Normal Dataset</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <div className="relative">
+                <input
+                  type="radio"
+                  name="dataSource"
+                  value="abnormal"
+                  checked={dataSource === 'abnormal'}
+                  onChange={(e) => setDataSource(e.target.value)}
+                  className="sr-only peer"
+                />
+                <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
+                  {dataSource === 'abnormal' && (
+                    <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
+                  )}
+                </div>
               </div>
-            </div>
-            <span className="text-white font-medium">Abnormal Dataset</span>
-          </label>
+              <span className="text-white font-medium">Abnormal Dataset</span>
+            </label>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Statistics Section */}
       <div className="bg-card-bg p-6 rounded-lg mb-6">

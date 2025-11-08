@@ -1,19 +1,93 @@
-import React from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useWishlist } from "../context/WishlistContext";
+// import { useWishlist } from "../context/WishlistContext"; // COMMENTED OUT - Keep for future
+import { processVariables } from "../data/processVariables";
 import { calculateStatus } from "../utils/statusCalculator";
+import { useSCTCurrentValue } from "../context/SCTContext";
 
 const Sidebar = React.memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { wishlist } = useWishlist();
+  // const { wishlist } = useWishlist(); // COMMENTED OUT - Keep for future
   const username = localStorage.getItem("username") || "User";
+
+  // Get ONLY live SCT data (for variable ID 2)
+  const sctValue = useSCTCurrentValue();
+
+  // State for dismissed action items (persisted in localStorage)
+  const [dismissedActions, setDismissedActions] = useState(() => {
+    const stored = localStorage.getItem('dismissedActionItems');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Get warning variables - STATIC except for SCT
+  const warningVariables = useMemo(() => {
+    return processVariables.filter(variable => {
+      // For SCT variable (ID: 2), use live data
+      if (variable.id === 2 && variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+        const numValue = parseFloat(sctValue.value);
+        return (numValue > variable.upperThreshold || numValue < variable.lowerThreshold);
+      }
+      // For all other variables, use static calculation (NO RELOAD)
+      return calculateStatus(variable) === 'warning';
+    });
+  }, [sctValue]); // Only re-compute when SCT changes
+
+  // Auto-cleanup: Remove dismissed items that are no longer warnings
+  useEffect(() => {
+    const currentWarningIds = warningVariables.map(v => v.id);
+    const stillWarnings = dismissedActions.filter(id => currentWarningIds.includes(id));
+
+    if (stillWarnings.length !== dismissedActions.length) {
+      setDismissedActions(stillWarnings);
+      localStorage.setItem('dismissedActionItems', JSON.stringify(stillWarnings));
+    }
+  }, [warningVariables, dismissedActions]);
+
+  // Filter out dismissed warnings for Action Items section
+  const activeWarnings = useMemo(() => {
+    return warningVariables.filter(v => !dismissedActions.includes(v.id));
+  }, [warningVariables, dismissedActions]);
+
+  // Handler to dismiss an action item
+  const handleDismiss = (variableId, e) => {
+    e.stopPropagation(); // Prevent navigation
+    const updated = [...dismissedActions, variableId];
+    setDismissedActions(updated);
+    localStorage.setItem('dismissedActionItems', JSON.stringify(updated));
+  };
+
+  // Handler to restore all dismissed items
+  const clearDismissed = () => {
+    setDismissedActions([]);
+    localStorage.removeItem('dismissedActionItems');
+  };
 
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  const handleWishlistClick = (variableId) => {
+  // Get warning type - with live SCT support
+  const getWarningType = (variable) => {
+    let currentValue;
+
+    // For SCT variable (ID: 2), use live data
+    if (variable.id === 2 && variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+      currentValue = parseFloat(sctValue.value);
+    } else {
+      // For all other variables, use static lastValue
+      currentValue = parseFloat(variable.lastValue);
+    }
+
+    if (currentValue > variable.upperThreshold) {
+      return 'High Warning';
+    } else if (currentValue < variable.lowerThreshold) {
+      return 'Low Warning';
+    }
+    return 'Normal';
+  };
+
+  const handleWarningClick = (variableId) => {
     navigate(`/analytics/${variableId}`);
   };
 
@@ -39,7 +113,145 @@ const Sidebar = React.memo(() => {
           </Link>
         </div>
 
-        {/* Wishlist Section */}
+        {/* Warning Items Section - NEW */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3 px-4">
+            <span className="text-xl">⚠️</span>
+            <h2 className="text-lg font-semibold text-white">Warning Items</h2>
+            {warningVariables.length > 0 && (
+              <span className="bg-warning-red text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {warningVariables.length}
+              </span>
+            )}
+          </div>
+
+          {warningVariables.length === 0 ? (
+            <div className="px-4 py-6 bg-card-bg rounded-lg">
+              <p className="text-sm text-success-green text-center font-medium">
+                ✓ All systems normal
+              </p>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                No warnings detected
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {warningVariables.map((variable) => {
+                const warningType = getWarningType(variable);
+                const isHighWarning = warningType === 'High Warning';
+
+                return (
+                  <button
+                    key={variable.id}
+                    onClick={() => handleWarningClick(variable.id)}
+                    className="w-full px-4 py-3 bg-card-bg hover:bg-[#252464] rounded-lg text-left transition-all duration-200 group"
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-sm font-semibold text-white truncate flex-1 group-hover:text-warning-red transition-colors">
+                        {variable.name}
+                      </p>
+                      <span className="ml-2 text-warning-red text-lg">⚠️</span>
+                    </div>
+                    <p className="text-xs text-gray-300 truncate">
+                      {variable.lastValue}
+                    </p>
+                    <p className={`text-xs font-medium mt-1 ${
+                      isHighWarning ? 'text-warning-red' : 'text-orange-400'
+                    }`}>
+                      {warningType}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Action Items Section */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3 px-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎯</span>
+              <h2 className="text-lg font-semibold text-white">Action Items</h2>
+              {activeWarnings.length > 0 && (
+                <span className="bg-warning-red text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {activeWarnings.length}
+                </span>
+              )}
+            </div>
+            {dismissedActions.length > 0 && (
+              <button
+                onClick={clearDismissed}
+                className="text-xs text-gray-400 hover:text-success-green transition-colors"
+                title={`Show ${dismissedActions.length} dismissed`}
+              >
+                Show {dismissedActions.length}
+              </button>
+            )}
+          </div>
+
+          {activeWarnings.length === 0 ? (
+            <div className="px-4 py-6 bg-card-bg rounded-lg border border-success-green">
+              <div className="text-center">
+                <span className="text-3xl mb-2 block">✓</span>
+                <p className="text-sm text-success-green font-medium">
+                  All Systems Normal
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {dismissedActions.length > 0
+                    ? `${dismissedActions.length} dismissed • Click "Show" to restore`
+                    : 'No corrective actions required'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {activeWarnings.map((variable) => (
+                <div
+                  key={variable.id}
+                  className="relative w-full text-left px-4 py-3 bg-card-bg rounded-lg border border-warning-red hover:bg-[#252464] transition-all group"
+                >
+                  <button
+                    onClick={() => navigate(`/analytics/${variable.id}`)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-start gap-3 pr-6">
+                      <span className="text-warning-red text-lg flex-shrink-0">⚠️</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-white text-sm font-bold group-hover:text-success-green transition-colors truncate">
+                            {variable.shortName}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mb-1">
+                          {getWarningType(variable)}
+                        </p>
+                        <p className="text-xs text-success-green group-hover:underline">
+                          Click for action steps →
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                  {/* Dismiss Button */}
+                  <button
+                    onClick={(e) => handleDismiss(variable.id, e)}
+                    className="absolute top-3 right-3 text-gray-500 hover:text-warning-red transition-colors text-lg leading-none"
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ========================================
+            WISHLIST FUNCTIONALITY (COMMENTED OUT)
+            TO RESTORE: Uncomment this section and
+            remove Warning/Action Items sections
+            ========================================
+
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-3 px-4">
             <span className="text-xl">⭐</span>
@@ -73,7 +285,7 @@ const Sidebar = React.memo(() => {
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate group-hover:text-success-green transition-colors">
-                            {variable.shortName}
+                            {variable.name}
                           </p>
                           <p className="text-xs text-gray-400 truncate mt-0.5">
                             {variable.lastValue}
@@ -101,6 +313,10 @@ const Sidebar = React.memo(() => {
             </>
           )}
         </div>
+
+        ========================================
+        END WISHLIST FUNCTIONALITY
+        ======================================== */}
       </nav>
 
       {/* User Section */}

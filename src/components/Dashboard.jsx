@@ -2,6 +2,9 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { processVariables, processes } from '../data/processVariables';
 import { calculateStatus, getWarningReason } from '../utils/statusCalculator';
+import { useSCTCurrentValue } from '../context/SCTContext';
+import SCTCard from './SCTCard';
+import StaticVariableCard from './StaticVariableCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -11,10 +14,21 @@ const Dashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef(null);
 
-  // Get warning variables with dynamic status calculation
+  // Get ONLY live SCT data (for variable ID 2)
+  const sctValue = useSCTCurrentValue();
+
+  // Get warning variables - STATIC except for SCT
   const warningVariables = useMemo(() => {
-    return processVariables.filter(variable => calculateStatus(variable) === 'warning');
-  }, []);
+    return processVariables.filter(variable => {
+      // For SCT variable (ID: 2), use live data
+      if (variable.id === 2 && variable.useLiveData && variable.dataSource === 'sct' && sctValue) {
+        const numValue = parseFloat(sctValue.value);
+        return (numValue > variable.upperThreshold || numValue < variable.lowerThreshold);
+      }
+      // For all other variables, use static calculation (NO RELOAD)
+      return calculateStatus(variable) === 'warning';
+    });
+  }, [sctValue]); // Only re-compute when SCT changes
 
   const warningCount = warningVariables.length;
 
@@ -22,9 +36,9 @@ const Dashboard = () => {
   const filteredVariables = useMemo(() => {
     let filtered = processVariables;
 
-    // Apply filter mode with dynamic status calculation
+    // Apply filter mode - show only warnings
     if (filterMode === 'errors') {
-      filtered = filtered.filter(variable => calculateStatus(variable) === 'warning');
+      filtered = warningVariables;
     }
 
     // Apply process filter
@@ -45,7 +59,7 @@ const Dashboard = () => {
     }
 
     return filtered;
-  }, [searchQuery, filterMode, selectedProcess]);
+  }, [warningVariables, searchQuery, filterMode, selectedProcess]);
 
   const toggleFilter = () => {
     setFilterMode(prev => prev === 'all' ? 'errors' : 'all');
@@ -169,10 +183,14 @@ const Dashboard = () => {
                             <span className="text-warning-red text-xl flex-shrink-0">⚠️</span>
                             <div className="flex-1 min-w-0">
                               <h4 className="text-white font-bold text-sm mb-1">
-                                {variable.shortName}
+                                {variable.name}
                               </h4>
                               <p className="text-gray-300 text-xs mb-1">
-                                Current: {variable.lastValue} ({getWarningReason(variable)})
+                                Current: {variable.id === 2 && sctValue ? `${sctValue.value} ${variable.unit}` : variable.lastValue} ({
+                                  variable.id === 2 && sctValue
+                                    ? (parseFloat(sctValue.value) > variable.upperThreshold ? 'High Warning' : 'Low Warning')
+                                    : getWarningReason(variable)
+                                })
                               </p>
                               <p className="text-gray-400 text-xs">
                                 {getTimestamp()}
@@ -246,76 +264,15 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredVariables.map((variable) => {
-              const status = calculateStatus(variable);
-              return (
-              <div
-                key={variable.id}
-                onClick={() => handleCardClick(variable)}
-                className={`bg-card-bg rounded-lg p-5 border-2 transition-all hover:shadow-lg hover:scale-105 cursor-pointer ${
-                  status === 'warning'
-                    ? 'border-warning-red'
-                    : 'border-transparent hover:border-medium-purple'
-                }`}
-              >
-                {/* Variable Header */}
-                <div className="mb-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-white text-sm leading-tight flex-1">
-                      {variable.shortName}
-                    </h3>
-                    {status === 'warning' && (
-                      <span className="ml-2 text-warning-red text-lg">⚠️</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-2" title={variable.name}>
-                    {variable.name}
-                  </p>
-                </div>
-
-                {/* Current Value */}
-                <div className="mb-4">
-                  <p className={`text-2xl font-bold ${
-                    status === 'warning' ? 'text-warning-red' : 'text-success-green'
-                  }`}>
-                    {variable.lastValue}
-                  </p>
-                </div>
-
-                {/* Process Tags - Now Clickable */}
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {variable.processes.slice(0, 3).map((process, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => handleProcessClick(process, e)}
-                      className={`text-white text-xs px-2 py-1 rounded transition-all hover:ring-2 hover:ring-success-green ${
-                        selectedProcess === process
-                          ? 'bg-success-green text-deep-navy font-bold'
-                          : 'bg-light-purple hover:bg-medium-purple'
-                      }`}
-                    >
-                      {process}
-                    </button>
-                  ))}
-                  {variable.processes.length > 3 && (
-                    <span className="bg-medium-purple text-white text-xs px-2 py-1 rounded">
-                      +{variable.processes.length - 3}
-                    </span>
-                  )}
-                </div>
-
-                {/* Thresholds */}
-                <div className="text-xs text-gray-400 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Upper:</span>
-                    <span>{variable.upperThreshold} {variable.unit}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Lower:</span>
-                    <span>{variable.lowerThreshold} {variable.unit}</span>
-                  </div>
-                </div>
-              </div>
-            );
+              // Split rendering: SCT Card vs Static Cards
+              // This prevents all 66 cards from re-rendering when SCT updates
+              if (variable.useLiveData && variable.dataSource === 'sct') {
+                // SCT Variable - uses live context data, re-renders every 4 seconds
+                return <SCTCard key={variable.id} variable={variable} />;
+              } else {
+                // All other variables - memoized, won't re-render on SCT updates
+                return <StaticVariableCard key={variable.id} variable={variable} />;
+              }
             })}
           </div>
         )}
