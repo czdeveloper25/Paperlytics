@@ -2,71 +2,6 @@
 
 This document tracks all updates and changes made to the Paperlytics Industrial Monitor application.
 
----
-
-## Update #3: UI Cleanup - Process Tags Removal
-**Date:** November 8, 2025
-**Type:** UI Enhancement
-
-### Changes Made
-- Removed process tag buttons from dashboard variable cards
-- Cleaned up card layout for better visual clarity
-- Reduced visual clutter while maintaining data integrity
-
-### Files Modified
-- `src/components/Dashboard.jsx`
-  - Lines 284-304: Removed process tags section from variable cards
-  - Removed colored tag buttons (e.g., "Wet End", "Press", "Drying")
-  - Removed "+X" indicator for additional tags
-
-### Functionality Preserved
-✅ Process filter buttons at top of dashboard still functional
-✅ Search by process name still works
-✅ All filtering logic intact
-✅ Process data maintained in `processVariables.js`
-
-### Visual Impact
-**Before:** Cards displayed colored process tag buttons taking up vertical space
-**After:** Cleaner, more compact cards showing only essential information
-
----
-
-## Update #2: Display Enhancement - Full Variable Names
-**Date:** November 8, 2025
-**Type:** UI Enhancement
-
-### Changes Made
-- Updated dashboard to display full variable names instead of shortNames
-- Changed main heading in cards from shortName (e.g., "DRV39") to full name (e.g., "Machine Speed | DRV39")
-- Removed duplicate subtext showing full name
-- Applied changes consistently across the application
-
-### Files Modified
-- `src/components/Dashboard.jsx`
-  - Line 264: Changed card heading from `{variable.shortName}` to `{variable.name}`
-  - Lines 270-272: Removed redundant full name subtext
-  - Line 172: Updated notification dropdown to show full names
-
-- `src/components/Sidebar.jsx`
-  - Line 76: Updated wishlist items to show full names
-
-### Data Preservation
-- `shortName` field retained in `processVariables.js` (not removed from data)
-- Field exists in data but is no longer displayed in UI
-
-### Before & After
-```
-BEFORE:
-  Main Heading: "DRV39"
-  Subtext: "Machine Speed | DRV39"
-
-AFTER:
-  Main Heading: "Machine Speed | DRV39"
-  Subtext: [removed]
-```
-
----
-
 ## Update #1: Data Accuracy - Threshold Corrections
 **Date:** November 8, 2025
 **Type:** Critical Data Update
@@ -132,6 +67,73 @@ Updated all 66 process variables with correct thresholds and units from the auth
 ✅ Build successful with no errors
 
 ---
+
+---
+
+## Update #2: Display Enhancement - Full Variable Names
+**Date:** November 8, 2025
+**Type:** UI Enhancement
+
+### Changes Made
+- Updated dashboard to display full variable names instead of shortNames
+- Changed main heading in cards from shortName (e.g., "DRV39") to full name (e.g., "Machine Speed | DRV39")
+- Removed duplicate subtext showing full name
+- Applied changes consistently across the application
+
+### Files Modified
+- `src/components/Dashboard.jsx`
+  - Line 264: Changed card heading from `{variable.shortName}` to `{variable.name}`
+  - Lines 270-272: Removed redundant full name subtext
+  - Line 172: Updated notification dropdown to show full names
+
+- `src/components/Sidebar.jsx`
+  - Line 76: Updated wishlist items to show full names
+
+### Data Preservation
+- `shortName` field retained in `processVariables.js` (not removed from data)
+- Field exists in data but is no longer displayed in UI
+
+### Before & After
+```
+BEFORE:
+  Main Heading: "DRV39"
+  Subtext: "Machine Speed | DRV39"
+
+AFTER:
+  Main Heading: "Machine Speed | DRV39"
+  Subtext: [removed]
+```
+
+---
+
+---
+
+## Update #3: UI Cleanup - Process Tags Removal
+**Date:** November 8, 2025
+**Type:** UI Enhancement
+
+### Changes Made
+- Removed process tag buttons from dashboard variable cards
+- Cleaned up card layout for better visual clarity
+- Reduced visual clutter while maintaining data integrity
+
+### Files Modified
+- `src/components/Dashboard.jsx`
+  - Lines 284-304: Removed process tags section from variable cards
+  - Removed colored tag buttons (e.g., "Wet End", "Press", "Drying")
+  - Removed "+X" indicator for additional tags
+
+### Functionality Preserved
+✅ Process filter buttons at top of dashboard still functional
+✅ Search by process name still works
+✅ All filtering logic intact
+✅ Process data maintained in `processVariables.js`
+
+### Visual Impact
+**Before:** Cards displayed colored process tag buttons taking up vertical space
+**After:** Cleaner, more compact cards showing only essential information
+
+
 
 ## Update #4: Real-Time Data Integration - SCT Variable
 **Date:** November 8, 2025
