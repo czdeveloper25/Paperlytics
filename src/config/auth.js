@@ -25,16 +25,21 @@ export async function hashPassword(text) {
 }
 
 /**
- * Valid username for authentication
+ * Valid users configuration
+ * Each user has a username and a pre-computed password hash
  */
-export const VALID_USERNAME = 'admin';
-
-/**
- * Pre-computed hash of the valid password
- * This is the SHA-256 hash of "Admin123$#"
- * Generated using: await hashPassword('Admin123$#')
- */
-export const VALID_PASSWORD_HASH = '04c14a83a60cea1f674674d74f81dde784ff08b7cc9201f451426d649a943bee';
+export const VALID_USERS = [
+  {
+    username: 'admin',
+    passwordHash: '04c14a83a60cea1f674674d74f81dde784ff08b7cc9201f451426d649a943bee', // Admin123$#
+    role: 'admin'
+  },
+  {
+    username: 'KRajan',
+    passwordHash: 'b36f4b97a32746f49849f614e46c3f2ff8652fe09b0d861d6dc6d1bf2c9c6694', // KamalR123$
+    role: 'user'
+  }
+];
 
 /**
  * Verify if the provided credentials are valid
@@ -43,12 +48,14 @@ export const VALID_PASSWORD_HASH = '04c14a83a60cea1f674674d74f81dde784ff08b7cc92
  * @returns {Promise<boolean>} - True if credentials are valid
  */
 export async function verifyCredentials(username, password) {
-  // Check username
-  if (username !== VALID_USERNAME) {
+  // Find user by username
+  const user = VALID_USERS.find(u => u.username === username);
+
+  if (!user) {
     return false;
   }
 
   // Hash the provided password and compare
   const hashedInput = await hashPassword(password);
-  return hashedInput === VALID_PASSWORD_HASH;
+  return hashedInput === user.passwordHash;
 }
