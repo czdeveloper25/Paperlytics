@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { processVariables, processes } from '../data/processVariables';
 import { calculateStatus, getWarningReason } from '../utils/statusCalculator';
 import { useSCTCurrentValue } from '../context/SCTContext';
+import { useRefreshContext } from '../context/VariableRefreshContext';
 import SCTCard from './SCTCard';
 import StaticVariableCard from './StaticVariableCard';
 
@@ -17,7 +18,10 @@ const Dashboard = () => {
   // Get ONLY live SCT data (for variable ID 2)
   const sctValue = useSCTCurrentValue();
 
-  // Get warning variables - STATIC except for SCT
+  // Get refresh context for global refresh all functionality
+  const { refreshVariable, loadingStates, refreshedValues } = useRefreshContext();
+
+  // Get warning variables - DYNAMIC with refresh values
   const warningVariables = useMemo(() => {
     return processVariables.filter(variable => {
       // For SCT variable (ID: 2), use live data
@@ -25,10 +29,17 @@ const Dashboard = () => {
         const numValue = parseFloat(sctValue.value);
         return (numValue > variable.upperThreshold || numValue < variable.lowerThreshold);
       }
-      // For all other variables, use static calculation (NO RELOAD)
-      return calculateStatus(variable) === 'warning';
+
+      // For all other variables, check refreshed values first, fall back to lastValue
+      const refreshed = refreshedValues[variable.id];
+      const currentValue = refreshed
+        ? parseFloat(refreshed.value)
+        : parseFloat(variable.lastValue);
+
+      return (currentValue > variable.upperThreshold ||
+              currentValue < variable.lowerThreshold);
     });
-  }, [sctValue]); // Only re-compute when SCT changes
+  }, [sctValue, refreshedValues]); // Re-compute when SCT or refreshed values change
 
   const warningCount = warningVariables.length;
 
@@ -95,6 +106,24 @@ const Dashboard = () => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Global Refresh All handler
+  const handleRefreshAll = async () => {
+    // Refresh all variables in batches of 5 to avoid overwhelming the system
+    const batchSize = 5;
+    for (let i = 0; i < processVariables.length; i += batchSize) {
+      const batch = processVariables.slice(i, i + batchSize);
+      // Refresh batch in parallel
+      await Promise.all(batch.map(v => refreshVariable(v.id)));
+      // Small delay between batches
+      if (i + batchSize < processVariables.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+  };
+
+  // Check if any variable is currently refreshing
+  const isAnyRefreshing = Object.values(loadingStates).some(loading => loading);
+
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -113,9 +142,9 @@ const Dashboard = () => {
   }, [showNotifications]);
 
   return (
-    <div className="min-h-screen bg-deep-navy text-white">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white">
       {/* Top Bar - Sticky */}
-      <div className="sticky top-0 bg-deep-navy z-10 border-b border-medium-purple h-[84px] flex items-center">
+      <div className="sticky top-0 bg-white dark:bg-black z-10 h-[84px] flex items-center">
         <div className="px-8 w-full">
           <div className="flex items-center justify-center gap-6">
             {/* Search Bar - Center */}
@@ -125,27 +154,42 @@ const Dashboard = () => {
                 placeholder="Search processes or variables..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#252464] text-white placeholder-gray-400 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-medium-purple transition-all"
+                className="w-full bg-gray-100 dark:bg-[#252464] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-medium-purple transition-all"
               />
             </div>
 
             {/* Filter Toggle Button - Middle */}
             <button
               onClick={toggleFilter}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+              className={`px-6 py-3 rounded-xl font-medium transition-all ${
                 filterMode === 'errors'
                   ? 'bg-warning-red hover:bg-red-600 text-white'
-                  : 'bg-medium-purple hover:bg-light-purple text-white'
+                  : 'bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple text-gray-900 dark:text-white'
               }`}
             >
               {filterMode === 'all' ? 'Show All' : 'Show Errors Only'}
+            </button>
+
+            {/* Refresh All Button */}
+            <button
+              onClick={handleRefreshAll}
+              disabled={isAnyRefreshing}
+              className={`px-6 py-3 rounded-xl font-medium transition-all ${
+                isAnyRefreshing
+                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple text-gray-900 dark:text-white'
+              }`}
+              title="Refresh all variables"
+            >
+              <span className={`${isAnyRefreshing ? 'animate-spin inline-block' : ''}`}>🔄</span>
+              <span className="ml-2">Refresh All</span>
             </button>
 
             {/* Notification Bell - Right */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={toggleNotifications}
-                className="relative p-3 bg-medium-purple hover:bg-light-purple rounded-lg transition-all"
+                className="relative p-3 bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple rounded-xl transition-all"
               >
                 <span className="text-2xl">🔔</span>
                 {warningCount > 0 && (
@@ -157,10 +201,10 @@ const Dashboard = () => {
 
               {/* Notification Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-[350px] bg-card-bg rounded-lg shadow-2xl border border-medium-purple overflow-hidden animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-[350px] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-300 dark:border-gray-700 overflow-hidden animate-fadeIn">
                   {/* Header */}
-                  <div className="px-4 py-3 border-b border-medium-purple">
-                    <h3 className="text-white font-bold">
+                  <div className="px-4 py-3 border-b border-gray-300 dark:border-gray-700">
+                    <h3 className="text-gray-900 dark:text-white font-bold">
                       Notifications ({warningCount})
                     </h3>
                   </div>
@@ -169,23 +213,23 @@ const Dashboard = () => {
                   <div className="max-h-[400px] overflow-y-auto">
                     {warningVariables.length === 0 ? (
                       <div className="px-4 py-8 text-center">
-                        <p className="text-gray-400">No active warnings</p>
+                        <p className="text-gray-600 dark:text-gray-400">No active warnings</p>
                       </div>
                     ) : (
                       warningVariables.map((variable, index) => (
                         <div
                           key={variable.id}
-                          className={`px-4 py-3 hover:bg-[#252464] transition-colors ${
-                            index < warningVariables.length - 1 ? 'border-b border-medium-purple' : ''
+                          className={`px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#252464] transition-colors ${
+                            index < warningVariables.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
                           }`}
                         >
                           <div className="flex items-start gap-3 mb-2">
                             <span className="text-warning-red text-xl flex-shrink-0">⚠️</span>
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-white font-bold text-sm mb-1">
+                              <h4 className="text-gray-900 dark:text-white font-bold text-sm mb-1">
                                 {variable.name}
                               </h4>
-                              <p className="text-gray-300 text-xs mb-1">
+                              <p className="text-gray-700 dark:text-gray-300 text-xs mb-1">
                                 Current: {variable.id === 2 && sctValue ? `${sctValue.value} ${variable.unit}` : variable.lastValue} ({
                                   variable.id === 2 && sctValue
                                     ? (parseFloat(sctValue.value) > variable.upperThreshold ? 'High Warning' : 'Low Warning')
@@ -229,10 +273,10 @@ const Dashboard = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={clearProcessFilter}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 !selectedProcess
-                  ? 'bg-success-green text-deep-navy'
-                  : 'bg-card-bg text-gray-300 hover:bg-medium-purple hover:text-white'
+                  ? 'bg-success-green text-deep-navy dark:text-deep-navy'
+                  : 'bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-medium-purple hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               All Processes
@@ -241,10 +285,10 @@ const Dashboard = () => {
               <button
                 key={process}
                 onClick={() => setSelectedProcess(process)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   selectedProcess === process
-                    ? 'bg-success-green text-deep-navy'
-                    : 'bg-card-bg text-gray-300 hover:bg-medium-purple hover:text-white'
+                    ? 'bg-success-green text-deep-navy dark:text-deep-navy'
+                    : 'bg-gray-200 dark:bg-gray-900 text-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-medium-purple hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 {process}
@@ -255,9 +299,9 @@ const Dashboard = () => {
 
         {/* Variable Cards Grid */}
         {filteredVariables.length === 0 ? (
-          <div className="bg-card-bg p-8 rounded-lg text-center">
-            <p className="text-gray-300 text-lg">No variables found</p>
-            <p className="text-sm text-gray-400 mt-2">
+          <div className="bg-gray-100 dark:bg-gray-900 p-8 rounded-xl text-center">
+            <p className="text-gray-700 dark:text-gray-300 text-lg">No variables found</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Try adjusting your search or filter
             </p>
           </div>

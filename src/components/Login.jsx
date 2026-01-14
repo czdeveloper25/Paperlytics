@@ -42,14 +42,14 @@ const Login = () => {
 
   return (
     <div
-      className={`min-h-screen bg-gradient-to-br from-deep-navy via-card-bg to-deep-navy flex items-center justify-center p-4 login-page ${
+      className={`min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 dark:from-black dark:via-gray-900 dark:to-black flex items-center justify-center p-4 login-page ${
         isFadingOut ? "fade-out-page" : ""
       }`}
     >
       <div className="w-full max-w-md">
         {/* Logo and Title */}
         <div className="text-center mb-8 fade-in-up">
-          <div className="inline-block bg-gradient-to-r from-medium-purple to-light-purple p-4 rounded-2xl mb-4">
+          <div className="inline-block bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-700 dark:to-gray-800 p-4 rounded-2xl mb-4">
             <svg
               className="w-16 h-16 text-white"
               fill="none"
@@ -64,16 +64,16 @@ const Login = () => {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Paperlytics</h1>
-          <p className="text-light-purple">Paper Process Monitoring System</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Paperlytics</h1>
+          <p className="text-gray-700 dark:text-gray-400">Paper Process Monitoring System</p>
         </div>
 
         {/* Login Card */}
         <div
-          className="bg-card-bg/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-medium-purple/30 fade-in-up"
+          className="bg-white/90 dark:bg-gray-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-300 dark:border-gray-700/30 fade-in-up"
           style={{ animationDelay: "0.1s" }}
         >
-          <h2 className="text-2xl font-semibold text-white mb-6 text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
             Sign In
           </h2>
 
@@ -91,7 +91,7 @@ const Login = () => {
             <div>
               <label
                 htmlFor="username"
-                className="block text-light-purple text-sm font-medium mb-2"
+                className="block text-gray-700 dark:text-light-purple text-sm font-medium mb-2"
               >
                 Username
               </label>
@@ -103,8 +103,8 @@ const Login = () => {
                   setUsername(e.target.value);
                   setError("");
                 }}
-                className={`w-full px-4 py-3 bg-deep-navy/50 border rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
-                  error ? "border-warning-red" : "border-medium-purple/50"
+                className={`w-full px-4 py-3 bg-gray-100 dark:bg-black/50 border rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
+                  error ? "border-warning-red" : "border-gray-300 dark:border-gray-700/50"
                 }`}
                 placeholder="Enter your username"
                 required
@@ -116,7 +116,7 @@ const Login = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-light-purple text-sm font-medium mb-2"
+                className="block text-gray-700 dark:text-light-purple text-sm font-medium mb-2"
               >
                 Password
               </label>
@@ -129,8 +129,8 @@ const Login = () => {
                     setPassword(e.target.value);
                     setError("");
                   }}
-                  className={`w-full px-4 py-3 pr-12 bg-deep-navy/50 border rounded-lg text-white placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
-                    error ? "border-warning-red" : "border-medium-purple/50"
+                  className={`w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-black/50 border rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-light-purple/50 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-medium-purple focus:border-transparent transition-all duration-300 ${
+                    error ? "border-warning-red" : "border-gray-300 dark:border-gray-700/50"
                   }`}
                   placeholder="Enter your password"
                   required
@@ -139,7 +139,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-light-purple hover:text-white transition-colors duration-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 dark:text-light-purple hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
                   disabled={isLoading}
                   tabIndex={-1}
                 >

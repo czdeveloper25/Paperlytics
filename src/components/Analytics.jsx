@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { processVariables, generateHistoricalData } from '../data/processVariables';
+import { variableDefinitions } from '../data/variableDefinitions';
 import { useWishlist } from '../context/WishlistContext';
 import { calculateStatus, getWarningReason } from '../utils/statusCalculator';
 import Toast from './Toast';
 import { useSCTCurrentValue, useSCTService } from '../context/SCTContext';
 import { getActionInstructions } from '../utils/actionInstructions';
+import { useTheme } from '../context/ThemeContext';
 import {
   LineChart,
   Line,
@@ -24,8 +26,8 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
   if (active && payload && payload.length) {
     const dataPoint = payload[0].payload;
     return (
-      <div className="bg-card-bg border-2 border-medium-purple p-3 rounded-lg shadow-xl">
-        <p className="text-gray-300 text-sm mb-1">{label}</p>
+      <div className="bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 p-3 rounded-xl shadow-xl">
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-1">{label}</p>
         <p className={`text-lg font-bold ${
           dataPoint.status === 'warning' ? 'text-warning-red' : 'text-success-green'
         }`}>
@@ -46,6 +48,7 @@ const Analytics = () => {
   const { variableId } = useParams();
   const navigate = useNavigate();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { isDarkMode } = useTheme();
 
   // Find variable by ID
   const variable = useMemo(() => {
@@ -101,22 +104,49 @@ const Analytics = () => {
 
   if (!variable) {
     return (
-      <div className="min-h-screen bg-deep-navy text-white p-8">
+      <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white p-8">
         <button
           onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
         >
           <span>←</span>
           <span>Dashboard</span>
         </button>
-        <div className="bg-card-bg p-8 rounded-lg text-center">
-          <p className="text-gray-300 text-lg">Variable not found</p>
+        <div className="bg-gray-100 dark:bg-gray-900 p-8 rounded-xl text-center">
+          <p className="text-gray-700 dark:text-gray-300 text-lg">Variable not found</p>
         </div>
       </div>
     );
   }
 
   const inWishlist = isInWishlist(variable.id);
+
+  // Dynamic chart colors based on theme
+  const chartColors = useMemo(() => {
+    if (isDarkMode) {
+      return {
+        // Dark Mode Colors
+        axisStroke: '#ffffff',
+        axisTick: '#e5e7eb',        // gray-200 - readable on black
+        axisLine: '#6b7280',         // gray-500
+        gridLine: '#374151',         // gray-700 - subtle on black
+        dataLine: '#3b82f6',         // blue-500 - vibrant
+        dataDot: '#60a5fa',          // blue-400
+        activeDot: '#fbbf24',        // amber-400
+      };
+    } else {
+      return {
+        // Light Mode Colors
+        axisStroke: '#374151',       // gray-700
+        axisTick: '#1f2937',         // gray-800 - READABLE on white
+        axisLine: '#9ca3af',         // gray-400
+        gridLine: '#d1d5db',         // gray-300 - subtle on white
+        dataLine: '#2563eb',         // blue-600 - vibrant, good contrast
+        dataDot: '#3b82f6',          // blue-500
+        activeDot: '#f59e0b',        // amber-500
+      };
+    }
+  }, [isDarkMode]);
 
   // Generate chart data based on selected time range and data source
   const chartData = useMemo(() => {
@@ -246,6 +276,11 @@ const Analytics = () => {
     };
   }, [chartData]);
 
+  // Get definition for current variable
+  const definition = useMemo(() => {
+    return variableDefinitions[variable.id] || 'No definition available for this variable.';
+  }, [variable.id]);
+
   const handleWishlistToggle = () => {
     if (inWishlist) {
       removeFromWishlist(variable.id);
@@ -301,26 +336,26 @@ const Analytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-deep-navy text-white p-8">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white p-8">
       {/* Breadcrumb */}
       <button
         onClick={() => navigate('/dashboard')}
-        className="flex items-center gap-2 text-white hover:text-success-green mb-6 transition-colors font-medium"
+        className="flex items-center gap-2 text-gray-900 dark:text-white hover:text-success-green dark:hover:text-success-green mb-6 transition-colors font-medium"
       >
         <span>←</span>
         <span>Dashboard</span>
       </button>
 
       {/* Variable Header Section */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
         {/* Row 1: Variable Name and Action Buttons */}
         <div className="flex items-start justify-between mb-4">
-          <h1 className="text-3xl font-bold text-white">{variable.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{variable.name}</h1>
           <div className="flex gap-3">
             {/* WISHLIST BUTTON - COMMENTED OUT FOR NOW
             <button
               onClick={handleWishlistToggle}
-              className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
+              className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
             >
               <span>{inWishlist ? '⭐' : '☆'}</span>
               <span>{inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
@@ -328,7 +363,7 @@ const Analytics = () => {
             */}
             <button
               onClick={handleOpenModal}
-              className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2"
+              className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
             >
               <span>⚙️</span>
               <span>Settings</span>
@@ -338,12 +373,12 @@ const Analytics = () => {
 
         {/* Row 2: Process Tags */}
         <div className="mb-4">
-          <p className="text-gray-400 text-sm mb-2">Process Tags:</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Process Tags:</p>
           <div className="flex flex-wrap gap-2">
             {variable.processes.map((process, index) => (
               <span
                 key={index}
-                className="bg-light-purple text-white px-3 py-1.5 rounded-full text-sm"
+                className="bg-gray-300 dark:bg-light-purple text-gray-900 dark:text-white px-3 py-1.5 rounded-full text-sm"
               >
                 {process}
               </span>
@@ -354,15 +389,15 @@ const Analytics = () => {
         {/* Row 3: Status Information */}
         <div className="grid grid-cols-3 gap-6">
           <div>
-            <p className="text-gray-400 text-sm mb-1">Current Value</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Current Value</p>
             <p className={`text-2xl font-bold transition-all duration-300 ${
-              currentStatus === 'warning' ? 'text-warning-red' : 'text-white'
+              currentStatus === 'warning' ? 'text-warning-red' : 'text-gray-900 dark:text-white'
             }`}>
               {currentDisplayValue}
             </p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm mb-1">Status</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Status</p>
             <p className={`text-xl font-semibold transition-all duration-300 ${
               currentStatus === 'warning' ? 'text-warning-red' : 'text-success-green'
             }`}>
@@ -370,27 +405,38 @@ const Analytics = () => {
             </p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm mb-1">Last Updated</p>
-            <p className="text-lg text-white">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Last Updated</p>
+            <p className="text-lg text-gray-900 dark:text-white">
               {chartData && chartData.length > 0 ? chartData[chartData.length - 1].timestamp : 'Now'}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Definition Card */}
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xl">📖</span>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Definition</h3>
+        </div>
+        <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+          {definition}
+        </p>
+      </div>
+
       {/* Thresholds Card */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-bold mb-4">Thresholds</h3>
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thresholds</h3>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-gray-400 text-sm mb-1">Upper Threshold</p>
-            <p className="text-xl font-semibold text-white">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Upper Threshold</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">
               {variable.upperThreshold} {variable.unit}
             </p>
           </div>
           <div>
-            <p className="text-gray-400 text-sm mb-1">Lower Threshold</p>
-            <p className="text-xl font-semibold text-white">
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Lower Threshold</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">
               {variable.lowerThreshold} {variable.unit}
             </p>
           </div>
@@ -398,23 +444,23 @@ const Analytics = () => {
       </div>
 
       {/* Action Items Card */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-bold mb-4">🎯 Action Items</h3>
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🎯 Action Items</h3>
 
         {currentStatus === 'warning' ? (
           // Show specific fixing directions for warnings
-          <div className="bg-deep-navy p-4 rounded-lg border-l-4 border-warning-red">
+          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-warning-red">
             <div className="flex items-start gap-3">
               <span className="text-warning-red text-2xl flex-shrink-0">⚠️</span>
               <div className="flex-1">
-                <h4 className="text-white font-bold mb-3">
+                <h4 className="text-gray-900 dark:text-white font-bold mb-3">
                   {warningReason} Detected - Corrective Actions Required
                 </h4>
-                <div className="text-gray-300">
+                <div className="text-gray-700 dark:text-gray-300">
                   {getActionInstructions(variable, warningReason)}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-700">
-                  <p className="text-gray-400 text-sm">
+                <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     <span className="font-semibold text-warning-red">Note:</span> Monitor the variable for 5-10 minutes after taking corrective action. Contact process engineer if issue persists.
                   </p>
                 </div>
@@ -423,12 +469,12 @@ const Analytics = () => {
           </div>
         ) : (
           // Normal status - no action needed
-          <div className="bg-deep-navy p-4 rounded-lg border-l-4 border-success-green">
+          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-success-green">
             <div className="flex items-center gap-3">
               <span className="text-success-green text-2xl flex-shrink-0">✓</span>
               <div>
-                <h4 className="text-white font-bold mb-1">Normal Operation</h4>
-                <p className="text-gray-300 text-sm">
+                <h4 className="text-gray-900 dark:text-white font-bold mb-1">Normal Operation</h4>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
                   No action required. Variable is operating within acceptable range ({variable.lowerThreshold} - {variable.upperThreshold} {variable.unit}).
                 </p>
               </div>
@@ -439,16 +485,16 @@ const Analytics = () => {
 
       {/* Time Range Selector */}
       <div className="mb-6">
-        <h3 className="text-lg font-bold mb-3">Time Range</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Time Range</h3>
         <div className="grid grid-cols-4 gap-3">
           {['Hour', 'Day', 'Week', 'Month'].map((range) => (
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-4 py-3 rounded-lg font-medium transition-all ${
+              className={`px-4 py-3 rounded-xl font-medium transition-all ${
                 timeRange === range
-                  ? 'bg-medium-purple text-white border-2 border-success-green'
-                  : 'bg-medium-purple text-white opacity-70 hover:opacity-100'
+                  ? 'bg-gray-300 dark:bg-medium-purple text-gray-900 dark:text-white border-2 border-success-green'
+                  : 'bg-gray-200 dark:bg-medium-purple text-gray-800 dark:text-white opacity-70 hover:opacity-100'
               }`}
             >
               {range}
@@ -458,28 +504,28 @@ const Analytics = () => {
       </div>
 
       {/* Chart Container */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-bold mb-4">Historical Data</h3>
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Historical Data</h3>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart
             data={chartData}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#505081" opacity={0.3} />
+            <CartesianGrid strokeDasharray="3 3" stroke={chartColors.gridLine} opacity={0.5} />
 
             {/* X Axis */}
             <XAxis
               dataKey="timestamp"
-              stroke="#ffffff"
-              tick={{ fill: '#e0e0e0', fontSize: 12 }}
-              axisLine={{ stroke: '#505081' }}
+              stroke={chartColors.axisStroke}
+              tick={{ fill: chartColors.axisTick, fontSize: 12 }}
+              axisLine={{ stroke: chartColors.axisLine }}
             />
 
             {/* Y Axis */}
             <YAxis
-              stroke="#ffffff"
-              tick={{ fill: '#e0e0e0', fontSize: 12 }}
-              axisLine={{ stroke: '#505081' }}
+              stroke={chartColors.axisStroke}
+              tick={{ fill: chartColors.axisTick, fontSize: 12 }}
+              axisLine={{ stroke: chartColors.axisLine }}
               domain={[
                 Math.floor(variable.lowerThreshold * 0.9),
                 Math.ceil(variable.upperThreshold * 1.1)
@@ -488,7 +534,7 @@ const Analytics = () => {
                 value: variable.unit,
                 angle: -90,
                 position: 'insideLeft',
-                fill: '#e0e0e0'
+                fill: chartColors.axisTick
               }}
             />
 
@@ -559,10 +605,10 @@ const Analytics = () => {
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#00ffff"
+              stroke={chartColors.dataLine}
               strokeWidth={3}
-              dot={{ fill: '#00ffff', r: 4 }}
-              activeDot={{ r: 6, fill: '#ffd700' }}
+              dot={{ fill: chartColors.dataDot, r: 4 }}
+              activeDot={{ r: 6, fill: chartColors.activeDot }}
               name={variable.shortName}
             />
           </LineChart>
@@ -571,12 +617,12 @@ const Analytics = () => {
 
       {/* Data Source Toggle - Hidden for SCT (real-time data) */}
       {!(variable.useLiveData && variable.dataSource === 'sct') && (
-        <div className="bg-card-bg p-6 rounded-lg mb-6">
+        <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold">Data Source:</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Data Source:</h3>
             <button
               onClick={() => setRefreshKey(prev => prev + 1)}
-              className="flex items-center gap-2 bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-lg font-medium transition-all"
+              className="flex items-center gap-2 bg-gray-300 dark:bg-medium-purple hover:bg-gray-400 dark:hover:bg-light-purple text-gray-900 dark:text-white px-4 py-2 rounded-xl font-medium transition-all"
               title="Reload data"
             >
               <span className="text-lg">🔄</span>
@@ -594,13 +640,13 @@ const Analytics = () => {
                   onChange={(e) => setDataSource(e.target.value)}
                   className="sr-only peer"
                 />
-                <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-gray-400 dark:border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-gray-200 dark:peer-checked:bg-[#252464] flex items-center justify-center">
                   {dataSource === 'normal' && (
                     <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
                   )}
                 </div>
               </div>
-              <span className="text-white font-medium">Normal Dataset</span>
+              <span className="text-gray-900 dark:text-white font-medium">Normal Dataset</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <div className="relative">
@@ -612,97 +658,97 @@ const Analytics = () => {
                   onChange={(e) => setDataSource(e.target.value)}
                   className="sr-only peer"
                 />
-                <div className="w-5 h-5 border-2 border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-[#252464] flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-gray-400 dark:border-gray-400 rounded-full peer-checked:border-success-green peer-checked:bg-gray-200 dark:peer-checked:bg-[#252464] flex items-center justify-center">
                   {dataSource === 'abnormal' && (
                     <div className="w-2.5 h-2.5 bg-success-green rounded-full"></div>
                   )}
                 </div>
               </div>
-              <span className="text-white font-medium">Abnormal Dataset</span>
+              <span className="text-gray-900 dark:text-white font-medium">Abnormal Dataset</span>
             </label>
           </div>
         </div>
       )}
 
       {/* Statistics Section */}
-      <div className="bg-card-bg p-6 rounded-lg mb-6">
-        <h3 className="text-lg font-bold mb-4">📊 Statistics for Selected Range</h3>
+      <div className="bg-gray-100 dark:bg-gray-900 p-6 rounded-xl mb-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📊 Statistics for Selected Range</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Average */}
-          <div className="bg-deep-navy p-4 rounded-lg border border-medium-purple transition-all duration-300 hover:border-success-green">
+          <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">📈</span>
-              <p className="text-gray-400 text-sm">Average</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Average</p>
             </div>
-            <p className="text-2xl font-bold text-white transition-all duration-300">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
               {statistics.average} {variable.unit}
             </p>
           </div>
 
           {/* Minimum */}
-          <div className="bg-deep-navy p-4 rounded-lg border border-medium-purple transition-all duration-300 hover:border-success-green">
+          <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">⬇️</span>
-              <p className="text-gray-400 text-sm">Minimum</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Minimum</p>
             </div>
-            <p className="text-2xl font-bold text-white transition-all duration-300">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
               {statistics.minimum.value} {variable.unit}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">
               at {statistics.minimum.timestamp}
             </p>
           </div>
 
           {/* Maximum */}
-          <div className="bg-deep-navy p-4 rounded-lg border border-medium-purple transition-all duration-300 hover:border-success-green">
+          <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">⬆️</span>
-              <p className="text-gray-400 text-sm">Maximum</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Maximum</p>
             </div>
-            <p className="text-2xl font-bold text-white transition-all duration-300">
+            <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
               {statistics.maximum.value} {variable.unit}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">
               at {statistics.maximum.timestamp}
             </p>
           </div>
 
           {/* Time in Normal Range */}
-          <div className={`bg-deep-navy p-4 rounded-lg border transition-all duration-300 ${
+          <div className={`bg-white dark:bg-black p-4 rounded-xl border transition-all duration-300 ${
             statistics.timeInNormalRange >= 90
               ? 'border-success-green hover:border-success-green'
               : 'border-warning-red hover:border-warning-red'
           }`}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">✅</span>
-              <p className="text-gray-400 text-sm">Normal Range</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Normal Range</p>
             </div>
             <p className={`text-2xl font-bold transition-all duration-300 ${
               statistics.timeInNormalRange >= 90 ? 'text-success-green' : 'text-warning-red'
             }`}>
               {statistics.timeInNormalRange}%
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">
               of total time
             </p>
           </div>
 
           {/* Warnings Triggered */}
-          <div className={`bg-deep-navy p-4 rounded-lg border transition-all duration-300 ${
+          <div className={`bg-white dark:bg-black p-4 rounded-xl border transition-all duration-300 ${
             statistics.warningsTriggered > 5
               ? 'border-warning-red hover:border-warning-red'
               : 'border-success-green hover:border-success-green'
           }`}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{statistics.warningsTriggered > 5 ? '⚠️' : '✓'}</span>
-              <p className="text-gray-400 text-sm">Warnings</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Warnings</p>
             </div>
             <p className={`text-2xl font-bold transition-all duration-300 ${
               statistics.warningsTriggered > 5 ? 'text-warning-red' : 'text-success-green'
             }`}>
               {statistics.warningsTriggered}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 dark:text-gray-500 mt-1">
               threshold violations
             </p>
           </div>
@@ -716,17 +762,17 @@ const Analytics = () => {
           onClick={handleCloseModal}
         >
           <div
-            className="bg-card-bg rounded-lg p-6 w-[500px] shadow-2xl animate-scaleIn"
+            className="bg-white dark:bg-gray-900 rounded-xl p-6 w-[500px] shadow-2xl animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-start justify-between mb-6">
-              <h2 className="text-xl font-bold text-white">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 Threshold Settings - {variable.shortName}
               </h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-white text-2xl leading-none transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none transition-colors"
               >
                 ✕
               </button>
@@ -734,7 +780,7 @@ const Analytics = () => {
 
             {/* Upper Threshold */}
             <div className="mb-5">
-              <label className="block text-white font-medium mb-2">
+              <label className="block text-gray-900 dark:text-white font-medium mb-2">
                 Upper Threshold (High Warning)
               </label>
               <div className="relative">
@@ -742,21 +788,21 @@ const Analytics = () => {
                   type="number"
                   value={upperThreshold}
                   onChange={(e) => setUpperThreshold(e.target.value)}
-                  className="w-full bg-[#252464] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-medium-purple pr-16"
+                  className="w-full bg-gray-100 dark:bg-[#252464] text-gray-900 dark:text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-medium-purple pr-16"
                   placeholder="Enter upper threshold"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
                   {variable.unit}
                 </span>
               </div>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                 Values above this will trigger warnings
               </p>
             </div>
 
             {/* Lower Threshold */}
             <div className="mb-5">
-              <label className="block text-white font-medium mb-2">
+              <label className="block text-gray-900 dark:text-white font-medium mb-2">
                 Lower Threshold (Low Warning)
               </label>
               <div className="relative">
@@ -764,21 +810,21 @@ const Analytics = () => {
                   type="number"
                   value={lowerThreshold}
                   onChange={(e) => setLowerThreshold(e.target.value)}
-                  className="w-full bg-[#252464] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-medium-purple pr-16"
+                  className="w-full bg-gray-100 dark:bg-[#252464] text-gray-900 dark:text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-medium-purple pr-16"
                   placeholder="Enter lower threshold"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400">
                   {variable.unit}
                 </span>
               </div>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
                 Values below this will trigger warnings
               </p>
             </div>
 
             {/* Normal Range Display */}
             {isFormValid() && (
-              <div className="mb-5 p-3 bg-deep-navy rounded-lg">
+              <div className="mb-5 p-3 bg-gray-100 dark:bg-black rounded-xl">
                 <p className="text-success-green font-medium">
                   Normal Range: {lowerThreshold} - {upperThreshold} {variable.unit}
                 </p>
@@ -787,7 +833,7 @@ const Analytics = () => {
 
             {/* Validation Error */}
             {validationError && (
-              <div className="mb-5 p-3 bg-warning-red bg-opacity-20 border border-warning-red rounded-lg">
+              <div className="mb-5 p-3 bg-warning-red bg-opacity-20 border border-warning-red rounded-xl">
                 <p className="text-warning-red text-sm">{validationError}</p>
               </div>
             )}
@@ -796,17 +842,17 @@ const Analytics = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleCloseModal}
-                className="flex-1 px-4 py-3 border-2 border-white text-white rounded-lg font-medium hover:bg-white hover:bg-opacity-10 transition-all"
+                className="flex-1 px-4 py-3 border-2 border-gray-400 dark:border-white text-gray-900 dark:text-white rounded-xl font-medium hover:bg-gray-100 dark:hover:bg-white dark:hover:bg-opacity-10 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveThresholds}
                 disabled={!isFormValid()}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                className={`flex-1 px-4 py-3 rounded-xl font-medium transition-all ${
                   isFormValid()
-                    ? 'bg-medium-purple hover:bg-light-purple text-white'
-                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    ? 'bg-gray-300 dark:bg-medium-purple hover:bg-gray-400 dark:hover:bg-light-purple text-gray-900 dark:text-white'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >
                 Save Changes
@@ -818,7 +864,7 @@ const Analytics = () => {
 
       {/* Success Toast */}
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-success-green text-deep-navy px-6 py-4 rounded-lg shadow-2xl font-medium animate-slideUp z-50">
+        <div className="fixed bottom-8 right-8 bg-success-green text-deep-navy px-6 py-4 rounded-xl shadow-2xl font-medium animate-slideUp z-50">
           ✓ Threshold settings saved successfully!
         </div>
       )}

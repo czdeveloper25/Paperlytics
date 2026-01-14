@@ -158,13 +158,13 @@ export const processVariables = [
     upperThreshold: 13.0,
     lowerThreshold: 7.4,
     historicalData: [],
-    useLiveData: true,  // Flag for CSV data
-    dataSource: 'sct'   // Identifies data source
+    useLiveData: true, // Flag for CSV data
+    dataSource: "sct", // Identifies data source
   },
   {
     id: 3,
     name: "Now BW | FR1_BW1_CURV:ROUT",
-    shortName: "FR1_BW1_CURV:ROUT",
+    shortName: "Now BW",
     lastValue: "26.5 lbs/MSF", // HIGH WARNING - Above upperThreshold (24.0)
     unit: "lbs/MSF",
     processes: ["Others", "Quality"],
