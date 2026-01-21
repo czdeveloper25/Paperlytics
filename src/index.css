@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+}
+
+.dark body {
+  background-color: #000000;
+}
+
+html {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.dark html {
+  background-color: #000000;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Fade-in animation for notification dropdown */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Scale-in animation for modal */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Slide-up animation for toast */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Slide-down animation for top toast */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Fade-in-up animation for login page elements */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Smooth fade-in for login page entrance */
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth fade-out for login page exit */
+@keyframes fadeOutPage {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Login page entrance animation */
+.login-page {
+  animation: fadeInPage 0.8s ease-out;
+}
+
+/* Login page exit animation */
+.fade-out-page {
+  animation: fadeOutPage 0.8s ease-in forwards;
+}
+
+/* Dashboard entrance fade-in */
+@keyframes dashboardFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dashboard-fade-in {
+  animation: dashboardFadeIn 0.8s ease-out;
+}
+
+/* Smooth transitions for cards and interactive elements */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* GPU-accelerated transforms for better performance */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth value updates */
+@keyframes valueUpdate {
+  0% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.value-update {
+  animation: valueUpdate 0.3s ease-out;
+}
+
+/* Pulse animation for loading states */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimize rendering for card grids */
+.card-grid {
+  contain: layout style;
+  will-change: contents;
+}
+
+/* Prevent layout shift during loading */
+.loading-placeholder {
+  min-height: 100px;
+}
+
+/* Touch-friendly interactions for mobile/tablet */
+@media (hover: none) and (pointer: coarse) {
+  /* Increase tap target sizes for better touch usability */
+  button {
+    min-height: 44px; /* Apple's recommended minimum tap target */
+  }
+
+  /* Remove hover effects on touch devices */
+  button:hover {
+    transform: none;
+  }
+
+  /* Add active/pressed state for touch feedback */
+  button:active {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
+  /* Smoother scrolling on touch devices */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Responsive utility classes */
+@media (max-width: 640px) {
+  /* Smaller padding on mobile */
+  .container-mobile {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Stack elements on tablet portrait */
+  .stack-tablet {
+    flex-direction: column;
+  }
+}
+
+/* Prevent horizontal scroll on small screens */
+body {
+  overflow-x: hidden;
+}
+
+/* Smooth sidebar transitions */
+.sidebar-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
