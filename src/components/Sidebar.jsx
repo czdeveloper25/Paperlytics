@@ -413,6 +413,7 @@ const Sidebar = React.memo(() => {
         </button>
       </div>
     </div>
+    </>
   );
 });
 
