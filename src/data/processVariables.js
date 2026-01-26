@@ -210,7 +210,7 @@ export const processVariables = [
     id: 3,
     name: "Now BW | FR1_BW1_CURV:ROUT",
     shortName: "Now BW",
-    lastValue: "26.5 lbs/MSF", // HIGH WARNING - Above upperThreshold (24.0)
+    lastValue: "25.8 lbs/MSF", // HIGH WARNING - Above upperThreshold (24.0)
     unit: "lbs/MSF",
     processes: ["Others", "Quality"],
     upperThreshold: 24.0,
@@ -232,7 +232,7 @@ export const processVariables = [
     id: 5,
     name: "TAPPI Drying Rate-32 Cans",
     shortName: "TAPPI Drying Rate-32",
-    lastValue: "5.8 lb/hr/sqft",
+    lastValue: "5.2 lb/hr/sqft", // LOW WARNING - Below lowerThreshold (5.5)
     unit: "lb/hr/sqft",
     processes: ["Drying", "Production"],
     upperThreshold: 6.2,
@@ -243,7 +243,7 @@ export const processVariables = [
     id: 6,
     name: "Stock Storage Tower Level Indication | LI-2180-101",
     shortName: "LI-2180-101",
-    lastValue: "66.0 %",
+    lastValue: "42.3 %", // LOW WARNING - Below lowerThreshold (45.4)
     unit: "%",
     processes: ["Stock preparation", "Production"],
     upperThreshold: 86.6,
@@ -287,7 +287,7 @@ export const processVariables = [
     id: 10,
     name: "SEC For Refiners (New)",
     shortName: "SEC For Refiners (Ne",
-    lastValue: "26.2 kWh/ton",
+    lastValue: "43.5 kWh/ton", // HIGH WARNING - Above upperThreshold (39.7)
     unit: "kWh/ton",
     processes: ["Refining", "Quality", "Production"],
     upperThreshold: 39.7,

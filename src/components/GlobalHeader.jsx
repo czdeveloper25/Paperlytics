@@ -4,6 +4,7 @@ import { useSCTCurrentValue } from '../context/SCTContext';
 import { useRefreshContext } from '../context/VariableRefreshContext';
 import { calculateStatus } from '../utils/statusCalculator';
 import { useSidebar } from '../context/SidebarContext';
+import { WarningFilledIcon, CheckIcon, RefreshIcon, MenuIcon } from './Icons';
 
 const GlobalHeader = () => {
   // Get sidebar context for hamburger menu
@@ -127,8 +128,8 @@ const GlobalHeader = () => {
                       {info.value}
                     </p>
                   </div>
-                  <span className={`ml-3 text-2xl ${isWarning ? 'text-warning-red' : 'text-success-green'}`}>
-                    {isWarning ? '⚠️' : '✓'}
+                  <span className={`ml-3 ${isWarning ? 'text-warning-red' : 'text-success-green'}`}>
+                    {isWarning ? <WarningFilledIcon className="w-6 h-6" /> : <CheckIcon className="w-6 h-6" />}
                   </span>
                 </div>
               </div>
@@ -160,9 +161,7 @@ const GlobalHeader = () => {
               }`}
               title="Refresh all header variables"
             >
-              <span className={`text-xl ${isAnyLoading ? 'animate-spin inline-block' : ''}`}>
-                🔄
-              </span>
+              <RefreshIcon className={`w-5 h-5 ${isAnyLoading ? 'animate-spin' : ''}`} />
             </button>
             {lastUpdated && (
               <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">

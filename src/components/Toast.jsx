@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { CheckIcon } from './Icons';
 
 const Toast = ({ message, onClose, duration = 3000 }) => {
   useEffect(() => {
@@ -12,7 +13,7 @@ const Toast = ({ message, onClose, duration = 3000 }) => {
   return (
     <div className="fixed top-8 right-8 z-50 animate-slideDown">
       <div className="bg-medium-purple text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px]">
-        <span className="text-xl">✓</span>
+        <CheckIcon className="w-5 h-5" />
         <p className="font-medium">{message}</p>
       </div>
     </div>

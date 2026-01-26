@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { getWarningType } from '../utils/statusCalculator';
+import { CheckIcon, WarningFilledIcon, CloseIcon } from './Icons';
 
 const ActionItemsTabContent = memo(({
   activeWarnings,
@@ -13,7 +14,7 @@ const ActionItemsTabContent = memo(({
   if (activeWarnings.length === 0) {
     return (
       <div className="bg-gray-100 dark:bg-gray-900 p-12 rounded-xl text-center border border-success-green">
-        <span className="text-6xl mb-4 block">✓</span>
+        <CheckIcon className="w-16 h-16 text-success-green mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-success-green mb-2">All Actions Completed</h2>
         <p className="text-gray-600 dark:text-gray-400">
           {dismissedCount > 0
@@ -63,7 +64,7 @@ const ActionItemsTabContent = memo(({
                 className="w-full text-left pr-10"
               >
                 <div className="flex items-start gap-4">
-                  <span className="text-warning-red text-3xl flex-shrink-0">⚠️</span>
+                  <WarningFilledIcon className="w-8 h-8 text-warning-red flex-shrink-0" />
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-success-green transition-colors">
@@ -93,10 +94,10 @@ const ActionItemsTabContent = memo(({
               {/* Dismiss Button */}
               <button
                 onClick={(e) => onDismiss(variable.id, e)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-warning-red hover:bg-warning-red/10 rounded-lg transition-all text-xl"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-warning-red hover:bg-warning-red/10 rounded-lg transition-all"
                 title="Dismiss this action item"
               >
-                ✕
+                <CloseIcon className="w-5 h-5" />
               </button>
             </div>
           );

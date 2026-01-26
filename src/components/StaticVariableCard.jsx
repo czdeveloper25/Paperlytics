@@ -1,40 +1,29 @@
 import React, { useState, useRef, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SimpleMiniChart from './SimpleMiniChart';
-import { useRefreshContext } from '../context/VariableRefreshContext';
+import { ChartIcon, WarningFilledIcon } from './Icons';
 
 /**
  * Static Variable Card Component
  * Optimized for performance:
  * - Custom memo comparison to prevent unnecessary re-renders
  * - No per-card event listeners (uses onBlur instead)
- * - Minimal context usage
+ * - Auto-refreshes every 30 seconds (app-wide)
  */
 const StaticVariableCard = memo(({
   variable,
-  isPinned,
-  onTogglePin,
-  isSelected,
-  onToggleSelect,
-  // Pre-computed values passed from parent to avoid context re-renders
+  // Pre-computed values passed from parent
   displayValue,
   status,
-  loading,
   lastUpdated
 }) => {
   const navigate = useNavigate();
-  const { refreshVariable } = useRefreshContext();
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
 
   const handleCardClick = useCallback(() => {
     navigate(`/analytics/${variable.id}`);
   }, [navigate, variable.id]);
-
-  const handleRefreshClick = useCallback((e) => {
-    e.stopPropagation();
-    refreshVariable(variable.id);
-  }, [refreshVariable, variable.id]);
 
   const handleSettingsClick = useCallback((e) => {
     e.stopPropagation();
@@ -53,61 +42,19 @@ const StaticVariableCard = memo(({
     <div
       onClick={handleCardClick}
       className={`bg-white dark:bg-gray-900 rounded-xl p-5 border-2 transition-all duration-200 hover:shadow-lg cursor-pointer ${
-        isSelected
-          ? 'border-success-green ring-2 ring-success-green/30'
-          : status === 'warning'
-            ? 'border-warning-red'
-            : 'border-gray-300 dark:border-transparent hover:border-gray-400 dark:hover:border-gray-600'
+        status === 'warning'
+          ? 'border-warning-red'
+          : 'border-gray-300 dark:border-transparent hover:border-gray-400 dark:hover:border-gray-600'
       }`}
     >
       {/* Variable Header */}
       <div className="mb-3">
         <div className="flex items-start justify-between mb-2">
-          {/* Checkbox for selection */}
-          <button
-            onClick={(e) => onToggleSelect(variable.id, e)}
-            className={`flex-shrink-0 w-5 h-5 rounded border-2 mr-2 mt-0.5 flex items-center justify-center transition-all ${
-              isSelected
-                ? 'bg-success-green border-success-green text-white'
-                : 'border-gray-400 dark:border-gray-500 hover:border-success-green'
-            }`}
-            title={isSelected ? 'Deselect variable' : 'Select for comparison'}
-          >
-            {isSelected && <span className="text-xs">✓</span>}
-          </button>
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight flex-1">
             {variable.name}
           </h3>
           <div className="flex items-center gap-1.5 ml-2">
-            {/* Pin Button */}
-            <button
-              onClick={(e) => onTogglePin(variable.id, e)}
-              className={`p-1.5 rounded-lg transition-all ${
-                isPinned
-                  ? 'bg-success-green text-white shadow-lg shadow-success-green/50 ring-2 ring-success-green'
-                  : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-              title={isPinned ? 'Unpin variable' : 'Pin to top'}
-            >
-              <span className="text-sm">{isPinned ? '📌' : '📍'}</span>
-            </button>
-            {/* Refresh Button */}
-            <button
-              onClick={handleRefreshClick}
-              disabled={loading}
-              className={`p-1.5 rounded-lg transition-all ${
-                loading
-                  ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-                  : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-              title="Refresh variable"
-            >
-              <span className={`text-sm ${loading ? 'animate-spin inline-block' : ''}`}>
-                🔄
-              </span>
-            </button>
-
-            {/* Settings Button - simplified, no auto-refresh per card */}
+            {/* Settings Button - view details */}
             <div
               className="relative"
               ref={settingsRef}
@@ -119,7 +66,7 @@ const StaticVariableCard = memo(({
                 className="p-1.5 rounded-lg transition-all bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                 title="View details"
               >
-                <span className="text-sm">📊</span>
+                <ChartIcon className="w-4 h-4" />
               </button>
 
               {/* Quick Info Popup */}
@@ -165,7 +112,7 @@ const StaticVariableCard = memo(({
             </div>
 
             {status === 'warning' && (
-              <span className="text-warning-red text-lg">⚠️</span>
+              <WarningFilledIcon className="w-5 h-5 text-warning-red" />
             )}
           </div>
         </div>
@@ -209,11 +156,8 @@ const StaticVariableCard = memo(({
   // Custom comparison - only re-render if these specific props change
   return (
     prevProps.variable.id === nextProps.variable.id &&
-    prevProps.isPinned === nextProps.isPinned &&
-    prevProps.isSelected === nextProps.isSelected &&
     prevProps.displayValue === nextProps.displayValue &&
     prevProps.status === nextProps.status &&
-    prevProps.loading === nextProps.loading &&
     prevProps.lastUpdated === nextProps.lastUpdated
   );
 });

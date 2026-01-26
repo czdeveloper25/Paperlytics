@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSCTCurrentValue } from '../context/SCTContext';
 import { useRefreshContext } from '../context/VariableRefreshContext';
 import MiniChart from './MiniChart';
+import { ChartIcon, WarningFilledIcon } from './Icons';
 
 /**
  * Isolated SCT Card Component
@@ -10,22 +11,15 @@ import MiniChart from './MiniChart';
  * Uses useSCTCurrentValue() for optimal performance
  *
  * Features:
- * - Auto-updates every 60s from SCTContext (existing functionality)
- * - Manual refresh button
- * - View details popup (consistent with StaticVariableCard)
+ * - Auto-updates every 30s (app-wide auto-refresh)
+ * - View details popup
  * - "Last updated" timestamp
- * - Loading state during refresh
  */
-const SCTCard = React.memo(({ variable, isPinned, onTogglePin, isSelected, onToggleSelect }) => {
+const SCTCard = React.memo(({ variable }) => {
   const navigate = useNavigate();
   const sctValue = useSCTCurrentValue(); // Auto-update subscription
 
-  // Manual refresh functionality
-  const {
-    refreshVariable,
-    getLastUpdatedText,
-    isLoading
-  } = useRefreshContext();
+  const { getLastUpdatedText } = useRefreshContext();
 
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef(null);
@@ -33,11 +27,6 @@ const SCTCard = React.memo(({ variable, isPinned, onTogglePin, isSelected, onTog
   const handleCardClick = useCallback(() => {
     navigate(`/analytics/${variable.id}`);
   }, [navigate, variable.id]);
-
-  const handleRefreshClick = useCallback((e) => {
-    e.stopPropagation();
-    refreshVariable(variable.id);
-  }, [refreshVariable, variable.id]);
 
   const handleSettingsClick = useCallback((e) => {
     e.stopPropagation();
@@ -65,67 +54,24 @@ const SCTCard = React.memo(({ variable, isPinned, onTogglePin, isSelected, onTog
       : 'normal';
   }
 
-  const loading = isLoading(variable.id);
   const lastUpdated = getLastUpdatedText(variable.id);
 
   return (
     <div
       onClick={handleCardClick}
       className={`bg-white dark:bg-gray-900 rounded-xl p-5 border-2 transition-all duration-200 hover:shadow-lg cursor-pointer ${
-        isSelected
-          ? 'border-success-green ring-2 ring-success-green/30'
-          : status === 'warning'
-            ? 'border-warning-red'
-            : 'border-gray-300 dark:border-transparent hover:border-gray-400 dark:hover:border-gray-600'
+        status === 'warning'
+          ? 'border-warning-red'
+          : 'border-gray-300 dark:border-transparent hover:border-gray-400 dark:hover:border-gray-600'
       }`}
     >
       {/* Variable Header */}
       <div className="mb-3">
         <div className="flex items-start justify-between mb-2">
-          {/* Checkbox for selection */}
-          <button
-            onClick={(e) => onToggleSelect(variable.id, e)}
-            className={`flex-shrink-0 w-5 h-5 rounded border-2 mr-2 mt-0.5 flex items-center justify-center transition-all ${
-              isSelected
-                ? 'bg-success-green border-success-green text-white'
-                : 'border-gray-400 dark:border-gray-500 hover:border-success-green'
-            }`}
-            title={isSelected ? 'Deselect variable' : 'Select for comparison'}
-          >
-            {isSelected && <span className="text-xs">✓</span>}
-          </button>
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight flex-1">
             {variable.name}
           </h3>
           <div className="flex items-center gap-1.5 ml-2">
-            {/* Pin Button */}
-            <button
-              onClick={(e) => onTogglePin(variable.id, e)}
-              className={`p-1.5 rounded-lg transition-all ${
-                isPinned
-                  ? 'bg-success-green text-white shadow-lg shadow-success-green/50 ring-2 ring-success-green'
-                  : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-              title={isPinned ? 'Unpin variable' : 'Pin to top'}
-            >
-              <span className="text-sm">{isPinned ? '📌' : '📍'}</span>
-            </button>
-            {/* Refresh Button */}
-            <button
-              onClick={handleRefreshClick}
-              disabled={loading}
-              className={`p-1.5 rounded-lg transition-all ${
-                loading
-                  ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-                  : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-              title="Refresh variable"
-            >
-              <span className={`text-sm ${loading ? 'animate-spin inline-block' : ''}`}>
-                🔄
-              </span>
-            </button>
-
             {/* View Details Button */}
             <div
               className="relative"
@@ -138,7 +84,7 @@ const SCTCard = React.memo(({ variable, isPinned, onTogglePin, isSelected, onTog
                 className="p-1.5 rounded-lg transition-all bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                 title="View details"
               >
-                <span className="text-sm">📊</span>
+                <ChartIcon className="w-4 h-4" />
               </button>
 
               {/* Quick Info Popup */}
@@ -184,7 +130,7 @@ const SCTCard = React.memo(({ variable, isPinned, onTogglePin, isSelected, onTog
             </div>
 
             {status === 'warning' && (
-              <span className="text-warning-red text-lg">⚠️</span>
+              <WarningFilledIcon className="w-5 h-5 text-warning-red" />
             )}
           </div>
         </div>

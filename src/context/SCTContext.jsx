@@ -54,11 +54,11 @@ export const SCTProvider = ({ children }) => {
         const newValue = sctService.getCurrentValue();
         setCurrentValue(newValue);
 
-        // Now set up regular 60-second interval (already at minute boundary)
+        // Now set up regular 30-second interval
         intervalId = setInterval(() => {
           const newValue = sctService.getCurrentValue();
           setCurrentValue(newValue);
-        }, 60000);
+        }, 30000);
       }, delay);
 
       return timeoutId;

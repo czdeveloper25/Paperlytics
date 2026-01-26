@@ -10,6 +10,21 @@ import { useRefreshContext } from '../context/VariableRefreshContext';
 import { getActionInstructions } from '../utils/actionInstructions';
 import { useTheme } from '../context/ThemeContext';
 import {
+  WarningFilledIcon,
+  CheckIcon,
+  BookIcon,
+  TargetIcon,
+  DownloadIcon,
+  RefreshIcon,
+  ChartIcon,
+  TrendingUpIcon,
+  CloseIcon,
+  CheckCircleIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CogIcon
+} from './Icons';
+import {
   LineChart,
   Line,
   XAxis,
@@ -34,10 +49,14 @@ const CustomTooltip = ({ active, payload, label, unit }) => {
         }`}>
           {dataPoint.value} {unit}
         </p>
-        <p className={`text-xs ${
+        <p className={`text-xs flex items-center gap-1 ${
           dataPoint.status === 'warning' ? 'text-warning-red' : 'text-success-green'
         }`}>
-          {dataPoint.status === 'warning' ? '⚠️ Warning' : '✓ Normal'}
+          {dataPoint.status === 'warning' ? (
+            <><WarningFilledIcon className="w-3 h-3" /> Warning</>
+          ) : (
+            <><CheckIcon className="w-3 h-3" /> Normal</>
+          )}
         </p>
       </div>
     );
@@ -447,7 +466,7 @@ const Analytics = () => {
               onClick={handleOpenModal}
               className="bg-medium-purple hover:bg-light-purple text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2"
             >
-              <span>⚙️</span>
+              <CogIcon className="w-4 h-4" />
               <span>Settings</span>
             </button>
           </div>
@@ -480,10 +499,14 @@ const Analytics = () => {
           </div>
           <div>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Status</p>
-            <p className={`text-xl font-semibold transition-all duration-300 ${
+            <p className={`text-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
               currentStatus === 'warning' ? 'text-warning-red' : 'text-success-green'
             }`}>
-              {currentStatus === 'warning' ? `⚠️ ${warningReason}` : '✓ Normal'}
+              {currentStatus === 'warning' ? (
+                <><WarningFilledIcon className="w-5 h-5" /> {warningReason}</>
+              ) : (
+                <><CheckIcon className="w-5 h-5" /> Normal</>
+              )}
             </p>
           </div>
           <div>
@@ -498,7 +521,7 @@ const Analytics = () => {
         {/* Definition Card */}
         <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">📖</span>
+          <BookIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Definition</h3>
         </div>
         <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
@@ -506,79 +529,21 @@ const Analytics = () => {
         </p>
       </div>
 
-        {/* Thresholds Card */}
-        <div className="mb-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thresholds</h3>
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Upper Threshold</p>
-            <p className="text-xl font-semibold text-gray-900 dark:text-white">
-              {variable.upperThreshold} {variable.unit}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Lower Threshold</p>
-            <p className="text-xl font-semibold text-gray-900 dark:text-white">
-              {variable.lowerThreshold} {variable.unit}
-            </p>
-          </div>
-        </div>
-      </div>
-
-        {/* Action Items Card */}
-        <div className="mb-6">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">🎯 Action Items</h3>
-
-        {currentStatus === 'warning' ? (
-          // Show specific fixing directions for warnings
-          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-warning-red">
-            <div className="flex items-start gap-3">
-              <span className="text-warning-red text-2xl flex-shrink-0">⚠️</span>
-              <div className="flex-1">
-                <h4 className="text-gray-900 dark:text-white font-bold mb-3">
-                  {warningReason} Detected - Corrective Actions Required
-                </h4>
-                <div className="text-gray-700 dark:text-gray-300">
-                  {getActionInstructions(variable, warningReason)}
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    <span className="font-semibold text-warning-red">Note:</span> Monitor the variable for 5-10 minutes after taking corrective action. Contact process engineer if issue persists.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Normal status - no action needed
-          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-success-green">
-            <div className="flex items-center gap-3">
-              <span className="text-success-green text-2xl flex-shrink-0">✓</span>
-              <div>
-                <h4 className="text-gray-900 dark:text-white font-bold mb-1">Normal Operation</h4>
-                <p className="text-gray-700 dark:text-gray-300 text-sm">
-                  No action required. Variable is operating within acceptable range ({variable.lowerThreshold} - {variable.upperThreshold} {variable.unit}).
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
         {/* Time Range Selector */}
         <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Time Range</h3>
+          {/* Export CSV button - hidden for now, can be re-enabled later */}
           <button
             onClick={handleExportCSV}
             disabled={!chartData || chartData.length === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+            className={`hidden flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
               chartData && chartData.length > 0
                 ? 'bg-success-green hover:bg-green-600 text-white'
                 : 'bg-gray-300 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
             }`}
           >
-            <span>📥</span>
+            <DownloadIcon className="w-4 h-4" />
             <span>Export CSV</span>
           </button>
         </div>
@@ -786,7 +751,7 @@ const Analytics = () => {
               className="flex items-center gap-2 bg-gray-300 dark:bg-medium-purple hover:bg-gray-400 dark:hover:bg-light-purple text-gray-900 dark:text-white px-4 py-2 rounded-xl font-medium transition-all"
               title="Reload data"
             >
-              <span className="text-lg">🔄</span>
+              <RefreshIcon className="w-5 h-5" />
               <span>Reload</span>
             </button>
           </div>
@@ -833,12 +798,14 @@ const Analytics = () => {
 
         {/* Statistics Section */}
         <div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">📊 Statistics for Selected Range</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <ChartIcon className="w-5 h-5" /> Statistics for Selected Range
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Average */}
           <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">📈</span>
+              <TrendingUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <p className="text-gray-600 dark:text-gray-400 text-sm">Average</p>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
@@ -849,7 +816,7 @@ const Analytics = () => {
           {/* Minimum */}
           <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">⬇️</span>
+              <ArrowDownIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <p className="text-gray-600 dark:text-gray-400 text-sm">Minimum</p>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
@@ -863,7 +830,7 @@ const Analytics = () => {
           {/* Maximum */}
           <div className="bg-white dark:bg-black p-4 rounded-xl border border-gray-300 dark:border-gray-700 transition-all duration-300 hover:border-success-green dark:hover:border-success-green">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">⬆️</span>
+              <ArrowUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <p className="text-gray-600 dark:text-gray-400 text-sm">Maximum</p>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white transition-all duration-300">
@@ -881,7 +848,7 @@ const Analytics = () => {
               : 'border-warning-red hover:border-warning-red'
           }`}>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">✅</span>
+              <CheckCircleIcon className={`w-5 h-5 ${statistics.timeInNormalRange >= 90 ? 'text-success-green' : 'text-warning-red'}`} />
               <p className="text-gray-600 dark:text-gray-400 text-sm">Normal Range</p>
             </div>
             <p className={`text-2xl font-bold transition-all duration-300 ${
@@ -901,7 +868,11 @@ const Analytics = () => {
               : 'border-success-green hover:border-success-green'
           }`}>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{statistics.warningsTriggered > 5 ? '⚠️' : '✓'}</span>
+              {statistics.warningsTriggered > 5 ? (
+                <WarningFilledIcon className="w-5 h-5 text-warning-red" />
+              ) : (
+                <CheckIcon className="w-5 h-5 text-success-green" />
+              )}
               <p className="text-gray-600 dark:text-gray-400 text-sm">Warnings</p>
             </div>
             <p className={`text-2xl font-bold transition-all duration-300 ${
@@ -915,6 +886,67 @@ const Analytics = () => {
           </div>
         </div>
         </div>
+
+        {/* Action Items Card */}
+        <div className="mb-6">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <TargetIcon className="w-5 h-5" /> Action Items
+        </h3>
+
+        {currentStatus === 'warning' ? (
+          // Show specific fixing directions for warnings
+          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-warning-red">
+            <div className="flex items-start gap-3">
+              <WarningFilledIcon className="w-6 h-6 text-warning-red flex-shrink-0" />
+              <div className="flex-1">
+                <h4 className="text-gray-900 dark:text-white font-bold mb-3">
+                  {warningReason} Detected - Corrective Actions Required
+                </h4>
+                <div className="text-gray-700 dark:text-gray-300">
+                  {getActionInstructions(variable, warningReason)}
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-300 dark:border-gray-700">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    <span className="font-semibold text-warning-red">Note:</span> Monitor the variable for 5-10 minutes after taking corrective action. Contact process engineer if issue persists.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Normal status - no action needed
+          <div className="bg-white dark:bg-black p-4 rounded-xl border-l-4 border-success-green">
+            <div className="flex items-center gap-3">
+              <CheckCircleIcon className="w-6 h-6 text-success-green flex-shrink-0" />
+              <div>
+                <h4 className="text-gray-900 dark:text-white font-bold mb-1">Normal Operation</h4>
+                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  No action required. Variable is operating within acceptable range ({variable.lowerThreshold} - {variable.upperThreshold} {variable.unit}).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+        {/* Thresholds Card */}
+        <div>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Thresholds</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Upper Threshold</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">
+              {variable.upperThreshold} {variable.unit}
+            </p>
+          </div>
+          <div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Lower Threshold</p>
+            <p className="text-xl font-semibold text-gray-900 dark:text-white">
+              {variable.lowerThreshold} {variable.unit}
+            </p>
+          </div>
+        </div>
+      </div>
       </div>
 
       {/* Threshold Settings Modal */}
@@ -934,9 +966,9 @@ const Analytics = () => {
               </h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-2xl leading-none transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                ✕
+                <CloseIcon className="w-6 h-6" />
               </button>
             </div>
 
@@ -1026,8 +1058,8 @@ const Analytics = () => {
 
       {/* Success Toast */}
       {showToast && (
-        <div className="fixed bottom-8 right-8 bg-success-green text-deep-navy px-6 py-4 rounded-xl shadow-2xl font-medium animate-slideUp z-50">
-          ✓ Threshold settings saved successfully!
+        <div className="fixed bottom-8 right-8 bg-success-green text-deep-navy px-6 py-4 rounded-xl shadow-2xl font-medium animate-slideUp z-50 flex items-center gap-2">
+          <CheckIcon className="w-5 h-5" /> Threshold settings saved successfully!
         </div>
       )}
 

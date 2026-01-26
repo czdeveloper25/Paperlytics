@@ -6,9 +6,11 @@ import { useSCTCurrentValue } from '../context/SCTContext';
 import { useRefreshContext } from '../context/VariableRefreshContext';
 import SCTCard from './SCTCard';
 import StaticVariableCard from './StaticVariableCard';
-import WarningTabContent from './WarningTabContent';
 import ActionItemsTabContent from './ActionItemsTabContent';
 import SearchWithAutocomplete from './SearchWithAutocomplete';
+import { BellIcon, WarningFilledIcon, ChartIcon, TargetIcon } from './Icons';
+
+// App auto-refreshes every 30 seconds - manual refresh removed
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -27,21 +29,12 @@ const Dashboard = () => {
     return stored ? JSON.parse(stored) : [];
   });
 
-  // Pinned variables state (persisted in localStorage)
-  const [pinnedVariables, setPinnedVariables] = useState(() => {
-    const stored = localStorage.getItem('industrial-monitor-pinned');
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  // Selected variables for comparison
-  const [selectedVariables, setSelectedVariables] = useState([]);
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   // Get ONLY live SCT data (for variable ID 2)
   const sctValue = useSCTCurrentValue();
 
-  // Get refresh context for global refresh all functionality
-  const { refreshVariable, loadingStates, refreshedValues, getLastUpdatedText } = useRefreshContext();
+  // Get refresh context for auto-refresh values
+  const { refreshedValues, getLastUpdatedText } = useRefreshContext();
 
   // Get warning variables - DYNAMIC with refresh values
   const warningVariables = useMemo(() => {
@@ -102,24 +95,9 @@ const Dashboard = () => {
       );
     }
 
-    // Apply "show selected only" filter
-    if (showSelectedOnly && selectedVariables.length > 0) {
-      filtered = filtered.filter(v => selectedVariables.includes(v.id));
-    }
-
     return filtered;
-  }, [warningVariables, searchTerms, filterMode, selectedProcess, showSelectedOnly, selectedVariables]);
+  }, [warningVariables, searchTerms, filterMode, selectedProcess]);
 
-  // Sort variables with pinned items first
-  const sortedVariables = useMemo(() => {
-    return [...filteredVariables].sort((a, b) => {
-      const aPinned = pinnedVariables.includes(a.id);
-      const bPinned = pinnedVariables.includes(b.id);
-      if (aPinned && !bPinned) return -1;
-      if (!aPinned && bPinned) return 1;
-      return 0;
-    });
-  }, [filteredVariables, pinnedVariables]);
 
   const toggleFilter = () => {
     setFilterMode(prev => prev === 'all' ? 'errors' : 'all');
@@ -138,38 +116,6 @@ const Dashboard = () => {
     setSelectedProcess(null);
   };
 
-  // Handler to toggle pin status (memoized for stable reference)
-  const togglePin = useCallback((variableId, e) => {
-    e.stopPropagation();
-    setPinnedVariables(prev => {
-      const updated = prev.includes(variableId)
-        ? prev.filter(id => id !== variableId)
-        : [...prev, variableId];
-      localStorage.setItem('industrial-monitor-pinned', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-
-  // Handler to toggle selection for comparison (memoized for stable reference)
-  const toggleSelect = useCallback((variableId, e) => {
-    e.stopPropagation();
-    setSelectedVariables(prev =>
-      prev.includes(variableId)
-        ? prev.filter(id => id !== variableId)
-        : [...prev, variableId]
-    );
-  }, []);
-
-  // Handler to clear all selections
-  const clearSelection = () => {
-    setSelectedVariables([]);
-    setShowSelectedOnly(false);
-  };
-
-  // Handler to toggle "show selected only" mode
-  const toggleShowSelectedOnly = () => {
-    setShowSelectedOnly(prev => !prev);
-  };
 
   // Handler to dismiss an action item
   const handleDismiss = (variableId, e) => {
@@ -196,23 +142,6 @@ const Dashboard = () => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Global Refresh All handler
-  const handleRefreshAll = async () => {
-    // Refresh all variables in batches of 5 to avoid overwhelming the system
-    const batchSize = 5;
-    for (let i = 0; i < processVariables.length; i += batchSize) {
-      const batch = processVariables.slice(i, i + batchSize);
-      // Refresh batch in parallel
-      await Promise.all(batch.map(v => refreshVariable(v.id)));
-      // Small delay between batches
-      if (i + batchSize < processVariables.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-  };
-
-  // Check if any variable is currently refreshing
-  const isAnyRefreshing = Object.values(loadingStates).some(loading => loading);
 
   // Memoized click outside handler
   const handleClickOutside = useCallback((event) => {
@@ -257,35 +186,6 @@ const Dashboard = () => {
 
             {/* Action Buttons - Stack on mobile, row on tablet+ */}
             <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              {/* Show Selected Button */}
-              {selectedVariables.length > 0 && (
-                <button
-                  onClick={toggleShowSelectedOnly}
-                  className={`flex items-center gap-2 px-3 md:px-4 py-2 md:py-3 rounded-xl font-medium transition-all text-sm md:text-base ${
-                    showSelectedOnly
-                      ? 'bg-success-green text-deep-navy'
-                      : 'bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple text-gray-900 dark:text-white'
-                  }`}
-                >
-                  <span className="hidden sm:inline">Selected</span>
-                  <span className="sm:hidden">Sel.</span>
-                  <span className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {selectedVariables.length}
-                  </span>
-                </button>
-              )}
-
-              {/* Clear Selection Button */}
-              {selectedVariables.length > 0 && (
-                <button
-                  onClick={clearSelection}
-                  className="p-2 md:p-3 rounded-xl bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple text-gray-900 dark:text-white transition-all"
-                  title="Clear selection"
-                >
-                  ✕
-                </button>
-              )}
-
               {/* Filter Toggle Button */}
               <button
                 onClick={toggleFilter}
@@ -299,28 +199,13 @@ const Dashboard = () => {
                 <span className="sm:hidden">{filterMode === 'all' ? 'All' : 'Errors'}</span>
               </button>
 
-              {/* Refresh All Button */}
-              <button
-                onClick={handleRefreshAll}
-                disabled={isAnyRefreshing}
-                className={`px-3 md:px-6 py-2 md:py-3 rounded-xl font-medium transition-all text-sm md:text-base whitespace-nowrap ${
-                  isAnyRefreshing
-                    ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple text-gray-900 dark:text-white'
-                }`}
-                title="Refresh all variables"
-              >
-                <span className={`${isAnyRefreshing ? 'animate-spin inline-block' : ''}`}>🔄</span>
-                <span className="ml-2 hidden sm:inline">Refresh All</span>
-              </button>
-
               {/* Notification Bell - Right */}
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={toggleNotifications}
                   className="relative p-2 md:p-3 bg-gray-200 dark:bg-medium-purple hover:bg-gray-300 dark:hover:bg-light-purple rounded-xl transition-all"
                 >
-                  <span className="text-xl md:text-2xl">🔔</span>
+                  <BellIcon className="w-5 h-5 md:w-6 md:h-6" />
                   {warningCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-warning-red text-white text-xs font-bold rounded-full h-5 w-5 md:h-6 md:w-6 flex items-center justify-center">
                       {warningCount}
@@ -353,7 +238,7 @@ const Dashboard = () => {
                           }`}
                         >
                           <div className="flex items-start gap-3 mb-2">
-                            <span className="text-warning-red text-xl flex-shrink-0">⚠️</span>
+                            <WarningFilledIcon className="w-5 h-5 text-warning-red flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <h4 className="text-gray-900 dark:text-white font-bold text-sm mb-1">
                                 {variable.name}
@@ -396,28 +281,9 @@ const Dashboard = () => {
                 : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <span className="text-base md:text-lg">📊</span>
+            <ChartIcon className="w-4 h-4 md:w-5 md:h-5" />
             <span className="hidden sm:inline">Dashboard</span>
             <span className="sm:hidden">Dash</span>
-          </button>
-
-          {/* Warning Tab */}
-          <button
-            onClick={() => setActiveTab('warning')}
-            className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 font-medium transition-all border-b-2 -mb-px text-sm md:text-base whitespace-nowrap ${
-              activeTab === 'warning'
-                ? 'text-success-green border-success-green'
-                : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            <span className="text-base md:text-lg">⚠️</span>
-            <span className="hidden sm:inline">Warning</span>
-            <span className="sm:hidden">Warn</span>
-            {warningCount > 0 && (
-              <span className="bg-warning-red text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                {warningCount}
-              </span>
-            )}
           </button>
 
           {/* Action Items Tab */}
@@ -429,7 +295,7 @@ const Dashboard = () => {
                 : 'text-gray-600 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            <span className="text-base md:text-lg">🎯</span>
+            <TargetIcon className="w-4 h-4 md:w-5 md:h-5" />
             <span className="hidden sm:inline">Action Items</span>
             <span className="sm:hidden">Actions</span>
             {activeWarnings.length > 0 && (
@@ -449,19 +315,9 @@ const Dashboard = () => {
             {/* Header with Title and Variable Count - Responsive */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm md:text-base">
-                {pinnedVariables.length > 0 && (
-                  <span className="text-sm text-success-green font-medium">
-                    📌 {sortedVariables.filter(v => pinnedVariables.includes(v.id)).length} pinned
-                    {sortedVariables.filter(v => pinnedVariables.includes(v.id)).length !== pinnedVariables.length && (
-                      <span className="text-gray-400 ml-1">({pinnedVariables.length} total)</span>
-                    )}
-                  </span>
-                )}
-                <p className="text-gray-400 text-sm">
-                  Showing {sortedVariables.length} of {processVariables.length} variables
-                </p>
-              </div>
+              <p className="text-gray-400 text-sm">
+                Showing {filteredVariables.length} of {processVariables.length} variables
+              </p>
             </div>
 
             {/* Process Filter Buttons */}
@@ -494,7 +350,7 @@ const Dashboard = () => {
             </div>
 
             {/* Variable Cards Grid */}
-            {sortedVariables.length === 0 ? (
+            {filteredVariables.length === 0 ? (
               <div className="bg-gray-100 dark:bg-gray-900 p-8 rounded-xl text-center">
                 <p className="text-gray-700 dark:text-gray-300 text-lg">No variables found</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -503,10 +359,7 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sortedVariables.map((variable) => {
-                  const isPinned = pinnedVariables.includes(variable.id);
-                  const isSelected = selectedVariables.includes(variable.id);
-
+                {filteredVariables.map((variable) => {
                   // Split rendering: SCT Card vs Static Cards
                   // This prevents all 66 cards from re-rendering when SCT updates
                   if (variable.useLiveData && variable.dataSource === 'sct') {
@@ -515,10 +368,6 @@ const Dashboard = () => {
                       <SCTCard
                         key={variable.id}
                         variable={variable}
-                        isPinned={isPinned}
-                        onTogglePin={togglePin}
-                        isSelected={isSelected}
-                        onToggleSelect={toggleSelect}
                       />
                     );
                   } else {
@@ -532,13 +381,8 @@ const Dashboard = () => {
                       <StaticVariableCard
                         key={variable.id}
                         variable={variable}
-                        isPinned={isPinned}
-                        onTogglePin={togglePin}
-                        isSelected={isSelected}
-                        onToggleSelect={toggleSelect}
                         displayValue={displayValue}
                         status={status}
-                        loading={!!loadingStates[variable.id]}
                         lastUpdated={getLastUpdatedText(variable.id)}
                       />
                     );
@@ -547,16 +391,6 @@ const Dashboard = () => {
               </div>
             )}
           </>
-        )}
-
-        {/* Warning Tab Content */}
-        {activeTab === 'warning' && (
-          <WarningTabContent
-            warningVariables={warningVariables}
-            sctValue={sctValue}
-            refreshedValues={refreshedValues}
-            onViewAnalytics={(id) => navigate(`/analytics/${id}`)}
-          />
         )}
 
         {/* Action Items Tab Content */}

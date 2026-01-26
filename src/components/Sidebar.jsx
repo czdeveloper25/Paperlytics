@@ -6,6 +6,18 @@ import { useSCTCurrentValue } from "../context/SCTContext";
 import { useTheme } from "../context/ThemeContext";
 import { useRefreshContext } from "../context/VariableRefreshContext";
 import { useSidebar } from "../context/SidebarContext";
+import {
+  WarningFilledIcon,
+  CheckIcon,
+  TargetIcon,
+  MoonIcon,
+  SunIcon,
+  CloseIcon,
+  HomeIcon,
+  ChartIcon,
+  LogoutIcon,
+  UserIcon
+} from "./Icons";
 
 const Sidebar = React.memo(() => {
   const location = useLocation();
@@ -167,7 +179,7 @@ const Sidebar = React.memo(() => {
         {/* Warning Items Section - NEW */}
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-3 px-4">
-            <span className="text-xl">⚠️</span>
+            <WarningFilledIcon className="w-5 h-5 text-warning-red" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Warning Items</h2>
             {warningVariables.length > 0 && (
               <span className="bg-warning-red text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -178,8 +190,8 @@ const Sidebar = React.memo(() => {
 
           {warningVariables.length === 0 ? (
             <div className="px-4 py-6 bg-gray-100 dark:bg-gray-900 rounded-lg">
-              <p className="text-sm text-success-green text-center font-medium">
-                ✓ All systems normal
+              <p className="text-sm text-success-green text-center font-medium flex items-center justify-center gap-1">
+                <CheckIcon className="w-4 h-4" /> All systems normal
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
                 No warnings detected
@@ -201,7 +213,7 @@ const Sidebar = React.memo(() => {
                       <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex-1 group-hover:text-warning-red transition-colors">
                         {variable.name}
                       </p>
-                      <span className="ml-2 text-warning-red text-lg">⚠️</span>
+                      <WarningFilledIcon className="ml-2 w-5 h-5 text-warning-red" />
                     </div>
                     <p className="text-xs text-gray-700 dark:text-gray-300 truncate">
                       {variable.lastValue}
@@ -222,7 +234,7 @@ const Sidebar = React.memo(() => {
         <div className="mt-8">
           <div className="flex items-center justify-between mb-3 px-4">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🎯</span>
+              <TargetIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Action Items</h2>
               {activeWarnings.length > 0 && (
                 <span className="bg-warning-red text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -244,7 +256,7 @@ const Sidebar = React.memo(() => {
           {activeWarnings.length === 0 ? (
             <div className="px-4 py-6 bg-gray-100 dark:bg-gray-900 rounded-lg border border-success-green">
               <div className="text-center">
-                <span className="text-3xl mb-2 block">✓</span>
+                <CheckIcon className="w-8 h-8 text-success-green mx-auto mb-2" />
                 <p className="text-sm text-success-green font-medium">
                   All Systems Normal
                 </p>
@@ -267,7 +279,7 @@ const Sidebar = React.memo(() => {
                     className="w-full text-left"
                   >
                     <div className="flex items-start gap-3 pr-6">
-                      <span className="text-warning-red text-lg flex-shrink-0">⚠️</span>
+                      <WarningFilledIcon className="w-5 h-5 text-warning-red flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-gray-900 dark:text-white text-sm font-bold group-hover:text-success-green transition-colors truncate">
@@ -286,10 +298,10 @@ const Sidebar = React.memo(() => {
                   {/* Dismiss Button */}
                   <button
                     onClick={(e) => handleDismiss(variable.id, e)}
-                    className="absolute top-3 right-3 text-gray-500 dark:text-gray-500 hover:text-warning-red transition-colors text-lg leading-none"
+                    className="absolute top-3 right-3 text-gray-500 dark:text-gray-500 hover:text-warning-red transition-colors"
                     title="Dismiss"
                   >
-                    ✕
+                    <CloseIcon className="w-4 h-4" />
                   </button>
                 </div>
               ))}
@@ -388,12 +400,12 @@ const Sidebar = React.memo(() => {
           <span className="flex items-center gap-2">
             {isDarkMode ? (
               <>
-                <span className="text-xl">🌙</span>
+                <MoonIcon className="w-5 h-5" />
                 <span>Dark Mode</span>
               </>
             ) : (
               <>
-                <span className="text-xl">☀️</span>
+                <SunIcon className="w-5 h-5" />
                 <span>Light Mode</span>
               </>
             )}
